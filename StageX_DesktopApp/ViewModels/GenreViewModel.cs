@@ -45,7 +45,19 @@ namespace StageX_DesktopApp.ViewModels
                 MessageBox.Show("Tên thể loại không được để trống!");
                 return;
             }
+            string newName = CurrentName.Trim();
+            bool isDuplicate = Genres.Any(g =>
+        g.GenreName.Equals(newName, StringComparison.OrdinalIgnoreCase) &&
+        g.GenreId != CurrentId);
 
+            if (isDuplicate)
+            {
+                MessageBox.Show($"Thể loại '{newName}' đã tồn tại! Vui lòng chọn tên khác.",
+                                "Lỗi trùng lặp",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                return; // Dừng lại, không lưu
+            }
             try
             {
                 // Tạo object (ID = 0 nếu thêm mới, ID > 0 nếu sửa)

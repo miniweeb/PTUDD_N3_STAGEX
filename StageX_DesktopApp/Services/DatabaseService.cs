@@ -148,6 +148,24 @@ namespace StageX_DesktopApp.Services
                 await context.SaveChangesAsync();
             }
         }
+        public async Task<bool> HasPerformancesAsync(int showId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Kiểm tra trong bảng Performances xem có record nào chứa ShowId này không
+                return await context.Performances.AnyAsync(p => p.ShowId == showId);
+            }
+        }
+
+        // [THÊM MỚI] Xóa vở diễn
+        public async Task DeleteShowAsync(int showId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi Stored Procedure xóa vở diễn (đã có trong file SQL: proc_delete_show)
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_show({showId})");
+            }
+        }
 
         // --- [SHOW] QUẢN LÝ VỞ DIỄN ---
         public async Task<List<Genre>> GetGenresAsync()

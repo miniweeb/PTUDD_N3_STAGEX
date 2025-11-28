@@ -132,7 +132,7 @@ namespace StageX_DesktopApp.ViewModels
                 !TimeSpan.TryParse(StartTimeStr, out TimeSpan start) ||
                 !decimal.TryParse(PriceStr, out decimal price))
             {
-                MessageBox.Show("Vui lòng nhập đúng thông tin!");
+                MessageBox.Show("Vui lòng nhập đầy đủ thông tin!");
                 return;
             }
 

@@ -130,7 +130,16 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private async Task Save()
         {
-            if (string.IsNullOrEmpty(Title)) { MessageBox.Show("Nhập tiêu đề!"); return; }
+            if (string.IsNullOrWhiteSpace(Title) ||
+        string.IsNullOrWhiteSpace(Director) ||
+        string.IsNullOrWhiteSpace(PosterUrl) ||
+        string.IsNullOrWhiteSpace(Description) ||
+        Duration <= 0)
+            {
+                MessageBox.Show("Vui lòng nhập đầy đủ thông tin",
+                                "Thiếu thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return; // Dừng lại, không chạy tiếp
+            }
 
             var show = new Show
             {
@@ -157,6 +166,53 @@ namespace StageX_DesktopApp.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show("Lỗi: " + ex.Message);
+            }
+        }
+        [RelayCommand]
+        private async Task Delete(Show show)
+        {
+            if (show == null) return;
+
+            // 1. Hỏi xác nhận người dùng trước
+            var result = MessageBox.Show($"Bạn có chắc chắn muốn xóa vở diễn '{show.Title}' không?",
+                                         "Xác nhận xóa",
+                                         MessageBoxButton.YesNo,
+                                         MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    // 2. Kiểm tra điều kiện: Có suất diễn chưa?
+                    bool hasPerformances = await _dbService.HasPerformancesAsync(show.ShowId);
+
+                    if (hasPerformances)
+                    {
+                        MessageBox.Show($"Không thể xóa vở diễn '{show.Title}' vì đã có suất diễn được tạo.\nHãy xóa các suất diễn trước.",
+                                        "Không thể xóa",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Error);
+                        return; // Dừng lại, không xóa
+                    }
+
+                    // 3. Nếu thỏa điều kiện -> Gọi Service xóa
+                    await _dbService.DeleteShowAsync(show.ShowId);
+
+                    MessageBox.Show("Đã xóa vở diễn thành công!");
+
+                    // 4. Reset form nếu đang sửa chính vở vừa xóa
+                    if (ShowId == show.ShowId)
+                    {
+                        Clear();
+                    }
+
+                    // 5. Tải lại danh sách
+                    await LoadShows();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Lỗi khi xóa: " + ex.Message);
+                }
             }
         }
     }
