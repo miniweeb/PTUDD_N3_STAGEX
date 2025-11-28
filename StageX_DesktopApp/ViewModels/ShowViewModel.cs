@@ -36,8 +36,6 @@ namespace StageX_DesktopApp.ViewModels
 
         // Danh sách hiển thị
         [ObservableProperty] private ObservableCollection<Show> _shows;
-        [ObservableProperty] private string _saveBtnContent = "Thêm";
-
         // Dữ liệu cho các ListBox chọn nhiều
         [ObservableProperty] private ObservableCollection<SelectableGenre> _genresList;
         [ObservableProperty] private ObservableCollection<SelectableActor> _actorsList;
@@ -176,45 +174,31 @@ namespace StageX_DesktopApp.ViewModels
         {
             if (show == null) return;
 
-            // 1. Hỏi xác nhận người dùng trước
-            var result = MessageBox.Show($"Bạn có chắc chắn muốn xóa vở diễn '{show.Title}' không?",
-                                         "Xác nhận xóa",
-                                         MessageBoxButton.YesNo,
-                                         MessageBoxImage.Warning);
+            // Hỏi xác nhận trước khi xóa
+            var confirm = MessageBox.Show($"Bạn có chắc chắn muốn xóa vở diễn '{show.Title}'?",
+                                          "Xác nhận xóa",
+                                          MessageBoxButton.YesNo,
+                                          MessageBoxImage.Warning);
 
-            if (result == MessageBoxResult.Yes)
+            if (confirm == MessageBoxResult.Yes)
             {
                 try
                 {
-                    // 2. Kiểm tra điều kiện: Có suất diễn chưa?
-                    bool hasPerformances = await _dbService.HasPerformancesAsync(show.ShowId);
-
-                    if (hasPerformances)
-                    {
-                        MessageBox.Show($"Không thể xóa vở diễn '{show.Title}' vì đã có suất diễn được tạo.\nHãy xóa các suất diễn trước.",
-                                        "Không thể xóa",
-                                        MessageBoxButton.OK,
-                                        MessageBoxImage.Error);
-                        return; // Dừng lại, không xóa
-                    }
-
-                    // 3. Nếu thỏa điều kiện -> Gọi Service xóa
+                    // Gọi hàm xóa bên Service
                     await _dbService.DeleteShowAsync(show.ShowId);
 
-                    MessageBox.Show("Đã xóa vở diễn thành công!");
+                    MessageBox.Show("Đã xóa vở diễn thành công!", "Thông báo");
 
-                    // 4. Reset form nếu đang sửa chính vở vừa xóa
-                    if (ShowId == show.ShowId)
-                    {
-                        Clear();
-                    }
+                    // Nếu đang hiển thị thông tin vở vừa xóa trên form thì xóa trắng form
+                    if (ShowId == show.ShowId) Clear();
 
-                    // 5. Tải lại danh sách
+                    // Tải lại danh sách
                     await LoadShows();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi khi xóa: " + ex.Message);
+                    // Bắt lỗi từ Service (Lỗi "đã có suất diễn") và hiện lên
+                    MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

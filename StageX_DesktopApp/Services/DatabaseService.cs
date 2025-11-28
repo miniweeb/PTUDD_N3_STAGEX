@@ -162,8 +162,29 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Gọi Stored Procedure xóa vở diễn (đã có trong file SQL: proc_delete_show)
-                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_show({showId})");
+                // 1. KIỂM TRA ĐIỀU KIỆN (Yêu cầu của bạn)
+                // Kiểm tra xem vở diễn này có nằm trong bảng Performances không
+                bool hasPerformance = await context.Performances.AnyAsync(p => p.ShowId == showId);
+
+                if (hasPerformance)
+                {
+                    // Nếu có, ném ra lỗi để ViewModel bắt được và báo cho người dùng
+                    throw new Exception("Không thể xóa: Vở diễn này đang có suất diễn (đã/sắp diễn)!");
+                }
+
+                // 2. NẾU KHÔNG CÓ SUẤT DIỄN -> TIẾN HÀNH XÓA
+
+                // Xóa các quan hệ phụ (Thể loại, Diễn viên) trước để tránh lỗi khóa ngoại
+                // (Hoặc nếu trong SQL bạn đã để ON DELETE CASCADE thì không cần 2 dòng này)
+                await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM show_genres WHERE show_id = {showId}");
+                await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM show_actors WHERE show_id = {showId}");
+
+                // Xóa Vở diễn chính
+                var show = new Show { ShowId = showId };
+                context.Shows.Attach(show); // Attach để EF biết nó tồn tại
+                context.Shows.Remove(show);
+
+                await context.SaveChangesAsync();
             }
         }
 
@@ -192,6 +213,14 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
+                // 1. Lấy danh sách ID các vở diễn ĐÃ CÓ suất diễn (Đang dùng)
+                // Dùng Distinct để lấy danh sách duy nhất cho nhanh
+                var usedShowIds = await context.Performances
+                                               .Select(p => p.ShowId)
+                                               .Distinct()
+                                               .ToListAsync();
+
+                // 2. Query lấy danh sách Vở diễn như bình thường
                 var query = context.Shows
                     .Include(s => s.Genres)
                     .Include(s => s.Actors)
@@ -204,7 +233,23 @@ namespace StageX_DesktopApp.Services
                 if (genreId > 0)
                     query = query.Where(s => s.Genres.Any(g => g.GenreId == genreId));
 
-                return await query.ToListAsync();
+                var shows = await query.ToListAsync();
+
+                // 3. Duyệt qua danh sách để set CanDelete
+                foreach (var show in shows)
+                {
+                    // Nếu ShowId nằm trong danh sách đã dùng -> Không được xóa
+                    if (usedShowIds.Contains(show.ShowId))
+                    {
+                        show.CanDelete = false;
+                    }
+                    else
+                    {
+                        show.CanDelete = true;
+                    }
+                }
+
+                return shows;
             }
         }
 

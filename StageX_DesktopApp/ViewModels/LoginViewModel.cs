@@ -19,6 +19,7 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty]
         private string _identifier = "admin@example.com"; // Giá trị mặc định như code cũ
 
+
         [ObservableProperty]
         private string _errorMessage;
 

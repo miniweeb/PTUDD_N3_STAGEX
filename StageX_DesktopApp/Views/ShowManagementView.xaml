@@ -192,13 +192,34 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Content="Sửa" Style="{StaticResource ButtonEditStyle}"
+
+                                    <Button Content="Sửa" 
                         Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                         CommandParameter="{Binding}"
-                        Margin="0,0,5,0"/>
-                                    <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}"
+                        Margin="0,0,5,0">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource ButtonEditStyle}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
+                                    <Button Content="Xóa" 
                         Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                        CommandParameter="{Binding}"/>
+                        CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource ButtonDeleteStyle}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CanDelete}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
