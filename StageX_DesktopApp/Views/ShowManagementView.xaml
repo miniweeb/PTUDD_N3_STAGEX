@@ -120,8 +120,15 @@
                     <TextBox Text="{Binding Description}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                        <Button Content="{Binding SaveBtnContent}" Command="{Binding SaveCommand}" Style="{StaticResource ButtonAddStyle}"/>
-                        <Button Content="Làm mới" Command="{Binding ClearCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0"/>
+                        <Button Content="{Binding SaveBtnContent}" 
+            Command="{Binding SaveCommand}" 
+            Style="{StaticResource ButtonAddStyle}"
+            MinWidth="120"/>
+
+                        <Button Content="Làm mới" 
+            Command="{Binding ClearCommand}" 
+            Style="{StaticResource ButtonNormalStyle}" 
+            Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

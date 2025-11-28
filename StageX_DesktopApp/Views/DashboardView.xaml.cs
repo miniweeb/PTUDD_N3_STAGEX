@@ -51,10 +51,8 @@ namespace StageX_DesktopApp.Views
                 doc.Info.Title = "Báo cáo Dashboard StageX";
 
                 PdfPage page = doc.AddPage();
-                page.Width = XUnit.FromMillimeter(297); // Khổ A4 Ngang
-                page.Height = XUnit.FromMillimeter(210);
+                page.Size = PdfSharp.PageSize.A4; // Khai báo khổ A4 chuẩn
                 page.Orientation = PdfSharp.PageOrientation.Landscape;
-
                 XGraphics gfx = XGraphics.FromPdfPage(page);
 
                 // 1. VẼ NỀN ĐEN (Cho giống giao diện App)

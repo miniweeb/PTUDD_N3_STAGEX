@@ -31,6 +31,9 @@ namespace StageX_DesktopApp.ViewModels
     {
         private readonly DatabaseService _dbService;
 
+        [ObservableProperty]
+        private string _saveBtnContent = "Thêm vở diễn";
+
         // Danh sách hiển thị
         [ObservableProperty] private ObservableCollection<Show> _shows;
 

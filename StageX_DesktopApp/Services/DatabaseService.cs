@@ -217,8 +217,11 @@ namespace StageX_DesktopApp.Services
                 }
 
                 // Xử lý quan hệ Nhiều-Nhiều (Logic cũ của bạn)
-                dbShow.Genres.Clear();
-                dbShow.Actors.Clear();
+                if (dbShow.Genres == null) dbShow.Genres = new List<Genre>();
+                else dbShow.Genres.Clear();
+
+                if (dbShow.Actors == null) dbShow.Actors = new List<Actor>();
+                else dbShow.Actors.Clear();
 
                 if (genreIds.Any())
                 {
