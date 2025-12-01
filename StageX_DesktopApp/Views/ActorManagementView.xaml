@@ -119,8 +119,8 @@
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-                        <Button Content="{Binding SaveButtonContent}" Command="{Binding SaveCommand}" Style="{StaticResource ButtonAddStyle}" Width="100" Height="32"/>
-                        <Button Content="Làm mới / Hủy" Command="{Binding ClearCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="100" Height="32"/>
+                        <Button Content="{Binding SaveButtonContent}" Command="{Binding SaveCommand}" Style="{StaticResource ButtonAddStyle}" Width="119" Height="32"/>
+                        <Button Content="Làm mới" Command="{Binding ClearCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="82" Height="32"/>
                     </StackPanel>
                 </Grid>
             </Grid>
