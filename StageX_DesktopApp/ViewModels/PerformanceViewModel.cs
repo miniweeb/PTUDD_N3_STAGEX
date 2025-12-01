@@ -192,7 +192,24 @@ namespace StageX_DesktopApp.ViewModels
             // 3. Tính toán thời gian
             DateTime startDateTime = PerfDate.Date.Add(new TimeSpan(SelectedHour, SelectedMinute, 0));
             DateTime endDateTime = startDateTime.AddMinutes(SelectedShow.DurationMinutes);
+            TimeSpan startTime = new TimeSpan(SelectedHour, SelectedMinute, 0);
+            TimeSpan endTime = startTime.Add(TimeSpan.FromMinutes(SelectedShow.DurationMinutes));
 
+            bool isOverlap = await _dbService.CheckPerformanceOverlapAsync(
+        SelectedTheater.TheaterId,
+        PerfDate,
+        startTime,
+        endTime,
+        PerfId // Truyền ID hiện tại để tránh báo trùng với chính nó khi sửa
+    );
+
+            if (isOverlap)
+            {
+                MessageBox.Show($"Rạp '{SelectedTheater.Name}' đã có suất diễn khác trong khung giờ này!\n" +
+                                $"({startTime:hh\\:mm} - {endTime:hh\\:mm})",
+                                "Trùng lịch", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return; // Dừng lại, không lưu
+            }
             // 4. [SỬA QUAN TRỌNG TẠI ĐÂY] 
             // Kiểm tra dựa trên chuỗi SelectedStatus thay vì StatusIndex
             if (SelectedStatus == "Đang mở bán")

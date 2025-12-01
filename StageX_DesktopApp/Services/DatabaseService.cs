@@ -758,7 +758,6 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Gọi các SP thống kê tương ứng
                 string sql = filter switch
                 {
                     "month" => "CALL proc_chart_last_4_weeks()",
@@ -782,7 +781,21 @@ namespace StageX_DesktopApp.Services
                     .ToListAsync();
             }
         }
-
+        public async Task<bool> CheckPerformanceOverlapAsync(int theaterId, DateTime date, TimeSpan newStart, TimeSpan newEnd, int excludePerfId = 0)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Logic trùng lịch: (StartA < EndB) AND (EndA > StartB)
+                // Chỉ kiểm tra các suất chưa kết thúc và chưa hủy
+                return await context.Performances.AnyAsync(p =>
+                    p.TheaterId == theaterId &&
+                    p.PerformanceDate.Date == date.Date &&
+                    p.PerformanceId != excludePerfId && // Bỏ qua chính nó (khi đang sửa)
+                    (p.Status == "Đang mở bán" || p.Status == "Đang diễn") && // Chỉ check suất active
+                    (newStart < p.EndTime && newEnd > p.StartTime) // Công thức giao nhau thời gian
+                );
+            }
+        }
         #endregion
     }
 }

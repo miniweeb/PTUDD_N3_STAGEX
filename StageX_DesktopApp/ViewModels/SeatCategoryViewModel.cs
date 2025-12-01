@@ -5,6 +5,7 @@ using StageX_DesktopApp.Models;
 using StageX_DesktopApp.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -14,15 +15,20 @@ namespace StageX_DesktopApp.ViewModels
     {
         private readonly DatabaseService _dbService;
 
-        // Danh sách hiển thị
         [ObservableProperty] private List<SeatCategory> _categories;
 
-        // Các trường nhập liệu
         [ObservableProperty] private int _categoryId;
         [ObservableProperty] private string _categoryName;
-        [ObservableProperty] private string _basePriceStr; // Binding string để dễ xử lý input
+        [ObservableProperty] private string _basePriceStr;
         [ObservableProperty] private string _saveBtnContent = "Thêm";
         [ObservableProperty] private bool _isEditing = false;
+
+        // Bảng màu cố định (15 màu)
+        private readonly string[] _safeColors = {
+            "E74C3C", "8E44AD", "3498DB", "1ABC9C", "27AE60",
+            "F1C40F", "E67E22", "D35400", "C0392B", "9B59B6",
+            "2980B9", "16A085", "F39C12", "7F8C8D", "2C3E50"
+        };
 
         public SeatCategoryViewModel()
         {
@@ -30,6 +36,7 @@ namespace StageX_DesktopApp.ViewModels
             LoadCategoriesCommand.Execute(null);
             WeakReferenceMessenger.Default.RegisterAll(this);
         }
+
         public class SeatCategoryChangedMessage
         {
             public string Value { get; }
@@ -48,8 +55,7 @@ namespace StageX_DesktopApp.ViewModels
             if (cat == null) return;
             CategoryId = cat.CategoryId;
             CategoryName = cat.CategoryName;
-            BasePriceStr = cat.BasePrice.ToString("F0"); // Hiển thị không số thập phân
-
+            BasePriceStr = cat.BasePrice.ToString("F0");
             SaveBtnContent = "Lưu";
             IsEditing = true;
         }
@@ -67,14 +73,22 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private async Task Save()
         {
-            // Validate
             if (string.IsNullOrWhiteSpace(CategoryName) || CategoryName.Contains("Tên hạng"))
             {
-                MessageBox.Show("Vui lòng nhập tên hạng ghế hợp lệ!");
+                MessageBox.Show("Vui lòng nhập tên hạng ghế hợp lệ!", "Lỗi nhập liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             decimal.TryParse(BasePriceStr, out decimal price);
+
+            // [FIX 1]: Lấy danh sách mới nhất từ DB để kiểm tra trùng tên
+            var currentCats = await _dbService.GetSeatCategoriesAsync();
+
+            if (currentCats.Any(c => c.CategoryName.Trim().Equals(CategoryName.Trim(), StringComparison.OrdinalIgnoreCase) && c.CategoryId != CategoryId))
+            {
+                MessageBox.Show($"Tên hạng ghế '{CategoryName}' đã tồn tại!", "Trùng dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             try
             {
@@ -85,19 +99,42 @@ namespace StageX_DesktopApp.ViewModels
                     BasePrice = price
                 };
 
-                // Nếu là thêm mới -> Random màu (Logic từ code cũ)
-                if (CategoryId == 0)
+                // [FIX 2]: Xử lý màu sắc CHÍNH XÁC HƠN
+                if (CategoryId == 0) // Thêm mới
                 {
-                    cat.ColorClass = GetRandomVibrantColor();
+                    // Lấy tất cả các màu đang được sử dụng trong DB (Trim + Upper để so sánh chuẩn)
+                    var usedColors = currentCats
+                                     .Where(c => !string.IsNullOrEmpty(c.ColorClass))
+                                     .Select(c => c.ColorClass.Trim().ToUpper())
+                                     .ToList();
+
+                    // Lọc ra các màu trong bảng mẫu CHƯA bị dùng
+                    var availableColors = _safeColors
+                                          .Where(safeColor => !usedColors.Contains(safeColor.ToUpper()))
+                                          .ToList();
+
+                    if (availableColors.Count == 0)
+                    {
+                        MessageBox.Show("Đã dùng hết 15 màu hiển thị! Không thể thêm hạng ghế mới.", "Hết màu", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
+                    // Chọn ngẫu nhiên 1 màu trong số màu CÒN TRỐNG
+                    cat.ColorClass = availableColors[new Random().Next(availableColors.Count)];
+                }
+                else // Cập nhật
+                {
+                    var oldCat = currentCats.FirstOrDefault(c => c.CategoryId == CategoryId);
+                    cat.ColorClass = oldCat?.ColorClass ?? _safeColors[0];
                 }
 
                 await _dbService.SaveSeatCategoryAsync(cat);
 
                 MessageBox.Show(CategoryId > 0 ? "Cập nhật thành công!" : "Thêm mới thành công!");
-                Cancel(); // Reset form
-                WeakReferenceMessenger.Default.Send(new SeatCategoryChangedMessage("Updated"));
-                await LoadCategories(); // Tải lại bảng
+                Cancel();
 
+                WeakReferenceMessenger.Default.Send(new SeatCategoryChangedMessage("Updated"));
+                await LoadCategories();
             }
             catch (Exception ex)
             {
@@ -109,51 +146,19 @@ namespace StageX_DesktopApp.ViewModels
         private async Task Delete(SeatCategory cat)
         {
             if (cat == null) return;
-
-            try
+            if (MessageBox.Show($"Xóa hạng ghế '{cat.CategoryName}'?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
-                // 1. [KIỂM TRA RÀNG BUỘC] 
-                // Gọi hàm vừa viết bên Service để xem hạng ghế có đang được dùng không
-                bool isInUse = await _dbService.IsSeatCategoryInUseAsync(cat.CategoryId);
-
-                if (isInUse)
-                {
-                    MessageBox.Show($"Không thể xóa hạng ghế '{cat.CategoryName}'!\n\nLý do: Hạng ghế này đang được gán cho ghế trong Rạp.\nVui lòng gỡ bỏ hạng ghế này khỏi sơ đồ rạp trước khi xóa.",
-                                    "Không thể xóa",
-                                    MessageBoxButton.OK,
-                                    MessageBoxImage.Warning);
-                    return; // Dừng lại, không cho xóa
-                }
-
-                // 2. [XÁC NHẬN XÓA]
-                if (MessageBox.Show($"Bạn có chắc chắn muốn xóa hạng ghế '{cat.CategoryName}' không?",
-                                    "Xác nhận xóa",
-                                    MessageBoxButton.YesNo,
-                                    MessageBoxImage.Question) == MessageBoxResult.Yes)
+                try
                 {
                     await _dbService.DeleteSeatCategoryAsync(cat.CategoryId);
-                    MessageBox.Show("Đã xóa thành công!");
-
                     await LoadCategories();
-
-                    // Nếu đang sửa đúng cái vừa xóa thì reset form về trạng thái thêm mới
-                    if (CategoryId == cat.CategoryId)
-                    {
-                        Cancel();
-                    }
+                    WeakReferenceMessenger.Default.Send(new SeatCategoryChangedMessage("Deleted"));
+                }
+                catch
+                {
+                    MessageBox.Show("Không thể xóa hạng ghế này (Đang được sử dụng).");
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi khi xóa: " + ex.Message);
-            }
-        }
-
-        // Hàm random màu từ code cũ
-        private string GetRandomVibrantColor()
-        {
-            string[] safeColors = { "E74C3C", "8E44AD", "3498DB", "1ABC9C", "27AE60", "F1C40F", "E67E22", "D35400", "C0392B", "9B59B6", "2980B9", "16A085", "F39C12", "7F8C8D", "2C3E50" };
-            return safeColors[new Random().Next(safeColors.Length)];
         }
     }
 }

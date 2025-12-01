@@ -161,8 +161,6 @@ namespace StageX_DesktopApp.Views
                     gfx.DrawString(ticket.SeatLabel, fontTitle, textGold, leftX + 60, y);
                     y += 35;
 
-                    gfx.DrawLine(linePen, leftX, y, pageWidth - leftX, y);
-                    y += 12;
 
                     // [CẬP NHẬT] Thay chữ TỔNG CỘNG bằng GIÁ VÉ và in giá riêng
                     gfx.DrawString("GIÁ VÉ:", fontHeader, textWhite, leftX, y + 5);

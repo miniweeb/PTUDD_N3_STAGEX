@@ -242,7 +242,7 @@ namespace StageX_DesktopApp.ViewModels
                     Title = show.show_name,
                     Values = new ChartValues<double> { (double)show.sold_tickets },
                     DataLabels = true,
-                    LabelPoint = point => $"{point.Y:N0} ({point.Participation:P0})"
+                    LabelPoint = point => $"{point.Participation:P0}"
                 });
             }
             PieSeries = series;

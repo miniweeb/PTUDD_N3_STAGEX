@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace StageX_DesktopApp.ViewModels
 {
@@ -71,6 +72,9 @@ namespace StageX_DesktopApp.ViewModels
         public List<Seat> CurrentSeats { get; set; } = new List<Seat>();
         private List<SeatUiItem> _selectedUiItems = new List<SeatUiItem>();
 
+        // >>> NEW <<< Timer tự động refresh seat_category
+        private readonly DispatcherTimer _categoryRefreshTimer;
+
         // Trạng thái Form
         [ObservableProperty] private bool _isCreatingNew = true;
         [ObservableProperty] private bool _isReadOnlyMode = false;
@@ -104,6 +108,14 @@ namespace StageX_DesktopApp.ViewModels
                 await LoadData();
                 ResetToCreateMode();
             });
+
+            // >>> NEW <<< Khởi tạo timer refresh category mỗi 5s
+            _categoryRefreshTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(5)
+            };
+            _categoryRefreshTimer.Tick += async (_, __) => await RefreshCategoriesOnly();
+            _categoryRefreshTimer.Start();
         }
 
         public void Receive(SeatCategoryChangedMessage m) => Application.Current.Dispatcher.InvokeAsync(async () => await LoadData(true));
@@ -112,6 +124,64 @@ namespace StageX_DesktopApp.ViewModels
         {
             if (!onlyCats) Theaters = new ObservableCollection<Theater>(await _dbService.GetTheatersWithStatusAsync());
             Categories = new ObservableCollection<SeatCategory>(await _dbService.GetSeatCategoriesAsync());
+        }
+
+        // >>> NEW <<< Refresh seat_category (không reload sơ đồ)
+        private async Task RefreshCategoriesOnly()
+        {
+            try
+            {
+                var latest = await _dbService.GetSeatCategoriesAsync();
+
+                if (Categories == null || latest.Count != Categories.Count)
+                {
+                    Categories = new ObservableCollection<SeatCategory>(latest);
+                    UpdateSeatCategoryBinding();
+                    return;
+                }
+
+                bool changed = false;
+                for (int i = 0; i < latest.Count; i++)
+                {
+                    if (latest[i].CategoryName != Categories[i].CategoryName ||
+                        latest[i].BasePrice != Categories[i].BasePrice ||
+                        latest[i].ColorClass != Categories[i].ColorClass)
+                    {
+                        changed = true;
+                        break;
+                    }
+                }
+
+                if (changed)
+                {
+                    Categories = new ObservableCollection<SeatCategory>(latest);
+                    UpdateSeatCategoryBinding();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[CategoryRefresh] " + ex.Message);
+            }
+        }
+
+        // >>> NEW <<< Cập nhật màu + thông tin category cho ghế đang hiển thị
+        private void UpdateSeatCategoryBinding()
+        {
+            if (SeatMap == null) return;
+
+            foreach (var row in SeatMap)
+            {
+                foreach (var obj in row.Items)
+                {
+                    if (obj is SeatUiItem ui)
+                    {
+                        ui.SeatData.SeatCategory =
+                            Categories.FirstOrDefault(c => c.CategoryId == ui.SeatData.CategoryId);
+
+                        ui.RefreshView();
+                    }
+                }
+            }
         }
 
         // --- 1. LOGIC VẼ SƠ ĐỒ THÔNG MINH (VISUAL MAPPING) ---
@@ -125,7 +195,6 @@ namespace StageX_DesktopApp.ViewModels
                 return;
             }
 
-            // Tìm hàng lớn nhất theo dữ liệu gốc (VD: D)
             var distinctRows = CurrentSeats.Select(s => s.RowChar.Trim().ToUpper()).Distinct().ToList();
             if (distinctRows.Count == 0) return;
 
@@ -134,46 +203,38 @@ namespace StageX_DesktopApp.ViewModels
             int maxCol = CurrentSeats.Max(s => s.SeatNumber);
 
             var newMap = new ObservableCollection<SeatRowItem>();
-
-            // Biến đếm để đặt tên hàng hiển thị (A, B, C...) liên tục
             int visualRowCounter = 0;
 
-            // Quét từ A -> MaxRow (0 -> 3)
-            // Dù hàng B (index 1) bị xóa, vòng lặp vẫn chạy qua nó
             for (int i = 0; i <= maxRowIndex; i++)
             {
-                string physicalRowChar = IndexToRowChar(i); // Tên gốc: A, B, C...
+                string physicalRowChar = IndexToRowChar(i);
                 var seatsInRow = CurrentSeats.Where(s => s.RowChar == physicalRowChar).ToList();
 
                 if (seatsInRow.Count > 0)
                 {
-                    // -- HÀNG CÓ GHẾ --
-                    // Tính tên hiển thị mới (VD: C -> B nếu hàng B bị xóa)
                     string visualLabel = IndexToRowChar(visualRowCounter);
-                    visualRowCounter++; // Tăng đếm cho hàng kế tiếp
+                    visualRowCounter++;
 
                     var rowItem = new SeatRowItem { RowName = visualLabel, Items = new ObservableCollection<object>() };
 
                     for (int c = 1; c <= maxCol; c++)
                     {
                         var seat = seatsInRow.FirstOrDefault(s => s.SeatNumber == c);
-                        // Truyền visualLabel vào SeatUiItem để nó hiển thị B1 thay vì C1
                         rowItem.Items.Add(seat != null ? new SeatUiItem(seat, visualLabel, OnSeatClicked) : null);
                     }
                     newMap.Add(rowItem);
                 }
                 else
                 {
-                    // -- HÀNG BỊ XÓA (LỐI ĐI) --
-                    // KHÔNG tăng visualRowCounter => Hàng kế tiếp sẽ dùng lại tên này
                     newMap.Add(new SeatRowItem { RowName = "", Items = new ObservableCollection<object>() });
                 }
             }
+
             SeatMap = newMap;
 
-            // Cập nhật ComboBox theo tên hiển thị (Visual Labels)
             var visualRows = newMap.Where(r => !string.IsNullOrEmpty(r.RowName)).Select(r => r.RowName).ToList();
             RowOptions = new ObservableCollection<string>(visualRows);
+
             SeatNumberOptions = new ObservableCollection<int>(Enumerable.Range(1, maxCol));
         }
 
@@ -194,7 +255,6 @@ namespace StageX_DesktopApp.ViewModels
             foreach (var item in _selectedUiItems) CurrentSeats.Remove(item.SeatData);
             _selectedUiItems.Clear();
 
-            // [TỐI ƯU] Chỉ xếp lại cột 1,2,3. KHÔNG xếp lại hàng (để giữ lối đi)
             var rows = CurrentSeats.GroupBy(s => s.RowChar);
             foreach (var r in rows)
             {
@@ -202,7 +262,7 @@ namespace StageX_DesktopApp.ViewModels
                 for (int i = 0; i < sorted.Count; i++) sorted[i].RealSeatNumber = i + 1;
             }
 
-            RefreshVisualMap(); // Logic vẽ lại sẽ tự động lo việc đặt tên ABC
+            RefreshVisualMap();
         }
 
         [RelayCommand]
@@ -213,7 +273,6 @@ namespace StageX_DesktopApp.ViewModels
             int end = SelectedEndOption ?? 1000;
             int count = 0;
 
-            // Duyệt qua Visual Map để chọn đúng hàng đang hiển thị
             foreach (var row in SeatMap)
             {
                 if (row.RowName == SelectedRowOption)
@@ -251,7 +310,7 @@ namespace StageX_DesktopApp.ViewModels
         private void ResetToCreateMode()
         {
             IsCreatingNew = true; IsReadOnlyMode = false;
-            PanelTitle = "1. TẠO RẠP MỚI" ; SaveBtnContent = "Lưu rạp mới";
+            PanelTitle = "1. TẠO RẠP MỚI"; SaveBtnContent = "Lưu rạp mới";
             SelectedTheater = null; InputTheaterName = ""; InputRows = ""; InputCols = "";
             CurrentSeats.Clear(); RefreshVisualMap();
         }
@@ -297,7 +356,6 @@ namespace StageX_DesktopApp.ViewModels
                     await _dbService.UpdateTheaterStructureAsync(SelectedTheater, CurrentSeats);
                     MessageBox.Show("Cập nhật thành công!");
                     await LoadData();
-                    // Chọn lại rạp đang sửa để refresh sơ đồ
                     var updatedTheater = Theaters.FirstOrDefault(x => x.TheaterId == SelectedTheater.TheaterId);
                     if (updatedTheater != null) await SelectTheater(updatedTheater);
                 }
@@ -311,16 +369,62 @@ namespace StageX_DesktopApp.ViewModels
         {
             if (IsReadOnlyMode || _selectedUiItems.Count == 0 || SelectedAssignCategoryId == 0) return;
             var cat = Categories.FirstOrDefault(c => c.CategoryId == SelectedAssignCategoryId);
-            foreach (var item in _selectedUiItems) { item.SeatData.CategoryId = SelectedAssignCategoryId; item.SeatData.SeatCategory = cat; item.IsSelected = false; item.RefreshView(); }
+            foreach (var item in _selectedUiItems)
+            {
+                item.SeatData.CategoryId = SelectedAssignCategoryId;
+                item.SeatData.SeatCategory = cat;
+                item.IsSelected = false;
+                item.RefreshView();
+            }
             _selectedUiItems.Clear();
         }
 
-        [RelayCommand] private async Task DeleteTheater(object obj) { if (obj is Theater t && MessageBox.Show($"Xóa {t.Name}?", "Xác nhận", MessageBoxButton.YesNo) == MessageBoxResult.Yes) { try { await _dbService.DeleteTheaterAsync(t.TheaterId); await LoadData(); ResetToCreateMode(); } catch { MessageBox.Show("Không thể xóa!"); } } }
+        [RelayCommand]
+        private async Task DeleteTheater(object obj)
+        {
+            if (obj is Theater t && MessageBox.Show($"Xóa {t.Name}?", "Xác nhận", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    await _dbService.DeleteTheaterAsync(t.TheaterId);
+                    await LoadData();
+                    ResetToCreateMode();
+                }
+                catch { MessageBox.Show("Không thể xóa!"); }
+            }
+        }
 
         // Hạng ghế CRUD
-        [RelayCommand] private async Task SaveCategory() { if (string.IsNullOrEmpty(CategoryName)) return; decimal.TryParse(CategoryPrice, out decimal p); var c = new SeatCategory { CategoryId = EditingCategoryId, CategoryName = CategoryName, BasePrice = p, ColorClass = EditingCategoryId == 0 ? "1ABC9C" : null }; await _dbService.SaveSeatCategoryAsync(c); MessageBox.Show("Lưu thành công!"); CategoryName = ""; CategoryPrice = ""; EditingCategoryId = 0; CategoryBtnContent = "Thêm"; await LoadData(true); }
-        [RelayCommand] private void EditCategory(SeatCategory c) { CategoryName = c.CategoryName; CategoryPrice = c.BasePrice.ToString("F0"); EditingCategoryId = c.CategoryId; CategoryBtnContent = "Lưu"; }
-        [RelayCommand] private async Task DeleteCategory(SeatCategory c) { if (MessageBox.Show("Xóa?", "Xác nhận", MessageBoxButton.YesNo) == MessageBoxResult.Yes) { await _dbService.DeleteSeatCategoryAsync(c.CategoryId); await LoadData(true); } }
+        [RelayCommand]
+        private async Task SaveCategory()
+        {
+            if (string.IsNullOrEmpty(CategoryName)) return;
+            decimal.TryParse(CategoryPrice, out decimal p);
+            var c = new SeatCategory { CategoryId = EditingCategoryId, CategoryName = CategoryName, BasePrice = p, ColorClass = EditingCategoryId == 0 ? "1ABC9C" : null };
+            await _dbService.SaveSeatCategoryAsync(c);
+            MessageBox.Show("Lưu thành công!");
+            CategoryName = ""; CategoryPrice = ""; EditingCategoryId = 0; CategoryBtnContent = "Thêm";
+            await LoadData(true);
+        }
+
+        [RelayCommand]
+        private void EditCategory(SeatCategory c)
+        {
+            CategoryName = c.CategoryName;
+            CategoryPrice = c.BasePrice.ToString("F0");
+            EditingCategoryId = c.CategoryId;
+            CategoryBtnContent = "Lưu";
+        }
+
+        [RelayCommand]
+        private async Task DeleteCategory(SeatCategory c)
+        {
+            if (MessageBox.Show("Xóa?", "Xác nhận", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                await _dbService.DeleteSeatCategoryAsync(c.CategoryId);
+                await LoadData(true);
+            }
+        }
 
         // Helpers
         private int RowCharToIndex(string row) => string.IsNullOrEmpty(row) ? 0 : (int)(row[0] - 'A');
