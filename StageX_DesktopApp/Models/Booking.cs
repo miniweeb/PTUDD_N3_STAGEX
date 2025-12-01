@@ -29,7 +29,7 @@ namespace StageX_DesktopApp.Models
         [Column("created_by")]
         public int? CreatedBy { get; set; }
 
-        // nếu bạn muốn navigation đến user người tạo:
+        // Navigation đến user người tạo:
         [ForeignKey("CreatedBy")]
         public virtual User CreatedByUser { get; set; }
 

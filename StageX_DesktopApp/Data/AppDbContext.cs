@@ -6,10 +6,9 @@ namespace StageX_DesktopApp.Data
 {
     public class AppDbContext : DbContext
     {
-        // --- 1. KHAI BÁO CÁC BẢNG CHÍNH (Đây là phần bạn đang thiếu) ---
         public DbSet<User> Users { get; set; }
         public DbSet<UserDetail> UserDetails { get; set; }
-        public DbSet<Actor> Actors { get; set; } // <-- Dòng này đang thiếu nên gây lỗi
+        public DbSet<Actor> Actors { get; set; }
         public DbSet<Show> Shows { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Theater> Theaters { get; set; }
@@ -39,7 +38,6 @@ namespace StageX_DesktopApp.Data
         // --- 3. CẤU HÌNH KẾT NỐI ---
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            // Đảm bảo chuỗi kết nối đúng với máy của bạn
             string connectionString = "Server=localhost;Database=stagex_db;User=root;Password=;";
             optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
         }
@@ -105,7 +103,6 @@ namespace StageX_DesktopApp.Data
             modelBuilder.Entity<TicketSold>().HasNoKey();
             modelBuilder.Entity<TopShow>().HasNoKey();
             modelBuilder.Entity<RatingDistribution>().HasNoKey();
-
             modelBuilder.Entity<ShowInfo>().HasNoKey();
             modelBuilder.Entity<PerformanceInfo>().HasNoKey();
             modelBuilder.Entity<AvailableSeat>().HasNoKey();
