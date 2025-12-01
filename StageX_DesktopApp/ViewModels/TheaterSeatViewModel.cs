@@ -284,12 +284,22 @@ namespace StageX_DesktopApp.ViewModels
                     var t = new Theater { Name = InputTheaterName, TotalSeats = CurrentSeats.Count, Status = "Đã hoạt động" };
                     await _dbService.SaveNewTheaterAsync(t, CurrentSeats);
                     MessageBox.Show("Thêm mới thành công!");
+                    await LoadData();
+                    var newTheater = Theaters.FirstOrDefault(x => x.Name == t.Name);
+                    if (newTheater != null)
+                    {
+                        await SelectTheater(newTheater);
+                    }
                 }
                 else if (SelectedTheater != null)
                 {
                     SelectedTheater.Name = InputTheaterName;
                     await _dbService.UpdateTheaterStructureAsync(SelectedTheater, CurrentSeats);
                     MessageBox.Show("Cập nhật thành công!");
+                    await LoadData();
+                    // Chọn lại rạp đang sửa để refresh sơ đồ
+                    var updatedTheater = Theaters.FirstOrDefault(x => x.TheaterId == SelectedTheater.TheaterId);
+                    if (updatedTheater != null) await SelectTheater(updatedTheater);
                 }
                 ResetToCreateMode(); await LoadData();
             }

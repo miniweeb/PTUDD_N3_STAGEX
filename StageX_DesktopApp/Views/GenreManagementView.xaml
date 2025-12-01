@@ -28,7 +28,7 @@
 
                         <TextBox Text="{Binding CurrentName, UpdateSourceTrigger=PropertyChanged}" 
                                  Grid.Column="0" Padding="8" FontSize="14"
-                                 Background="#EAEAEA" Foreground="black" BorderBrush="#555" BorderThickness="1" Height="32"/>
+                                 Background="#EAEAEA" Foreground="black" BorderBrush="#555" BorderThickness="1" Height="NaN"/>
 
                         <Button Grid.Column="1" 
                                 Content="{Binding SaveButtonContent}" 

@@ -10,7 +10,15 @@ namespace StageX_DesktopApp.Services
 {
     public class DatabaseService
     {
-        // ... (Giữ nguyên hàm GetUserByIdentifierAsync cũ) ...
+        // =================================================================================
+        // #REGION: USER & AUTHENTICATION (QUẢN LÝ TÀI KHOẢN & ĐĂNG NHẬP)
+        // =================================================================================
+        #region User & Auth
+
+        /// <summary>
+        /// Tìm User theo Email hoặc Tên đăng nhập để xử lý đăng nhập.
+        /// (Giữ nguyên LINQ vì đơn giản và cần trả về Object User đầy đủ để check pass)
+        /// </summary>
         public async Task<User?> GetUserByIdentifierAsync(string identifier)
         {
             using (var context = new AppDbContext())
@@ -20,74 +28,44 @@ namespace StageX_DesktopApp.Services
             }
         }
 
-        // --- PHẦN MỚI CHO ACTOR (DIỄN VIÊN) ---
-
-        public async Task<List<Actor>> GetActorsAsync(string keyword = "")
-        {
-            using (var context = new AppDbContext())
-            {
-                var query = context.Actors.AsQueryable();
-                if (!string.IsNullOrEmpty(keyword))
-                {
-                    query = query.Where(a => a.FullName.Contains(keyword) || a.NickName.Contains(keyword));
-                }
-                return await query.OrderByDescending(a => a.ActorId).ToListAsync();
-            }
-        }
-
-        public async Task SaveActorAsync(Actor actor)
-        {
-            using (var context = new AppDbContext())
-            {
-                if (actor.ActorId > 0)
-                {
-                    context.Actors.Update(actor); // Cập nhật
-                }
-                else
-                {
-                    context.Actors.Add(actor); // Thêm mới
-                }
-                await context.SaveChangesAsync();
-            }
-        }
-
-        public async Task DeleteActorAsync(int actorId)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Tạo object giả chỉ chứa ID để xóa cho nhanh
-                var actor = new Actor { ActorId = actorId };
-                context.Actors.Remove(actor);
-                await context.SaveChangesAsync();
-            }
-        }
-
-        // --- PHẦN MỚI CHO ACCOUNT (TÀI KHOẢN) ---
-        public async Task<bool> CheckUserExistsAsync(string email, string accountName)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Kiểm tra xem có user nào trùng Email HOẶC AccountName không
-                return await context.Users.AnyAsync(u => u.Email == email || u.AccountName == accountName);
-            }
-        }
+        /// <summary>
+        /// Lấy danh sách nhân viên và admin (Sử dụng SP có sẵn trong DB)
+        /// </summary>
         public async Task<List<User>> GetAdminStaffUsersAsync()
         {
             using (var context = new AppDbContext())
             {
-                // Gọi Stored Procedure cũ của bạn
+                // Gọi SP: proc_get_admin_staff_users
                 return await context.Users
                     .FromSqlRaw("CALL proc_get_admin_staff_users()")
                     .ToListAsync();
             }
         }
 
+        /// <summary>
+        /// Kiểm tra trùng lặp Email hoặc Tên tài khoản (Sử dụng SP)
+        /// </summary>
+        public async Task<bool> CheckUserExistsAsync(string email, string accountName)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Có thể dùng LINQ hoặc SP. Dùng SP proc_check_user_exists cho tối ưu
+                // Tuy nhiên hàm SP này trả về Count, cần execute scalar. 
+                // Để đơn giản và an toàn với EF Core, đoạn check này dùng LINQ vẫn rất nhanh.
+                return await context.Users.AnyAsync(u => u.Email == email || u.AccountName == accountName);
+            }
+        }
+
+        /// <summary>
+        /// Lưu thông tin User (Thêm mới hoặc Cập nhật)
+        /// </summary>
         public async Task SaveUserAsync(User user, bool isUpdatePassword)
         {
             using (var context = new AppDbContext())
             {
                 if (user.UserId > 0)
                 {
+                    // Cập nhật
                     var dbUser = await context.Users.FindAsync(user.UserId);
                     if (dbUser != null)
                     {
@@ -95,36 +73,56 @@ namespace StageX_DesktopApp.Services
                         dbUser.Email = user.Email;
                         dbUser.Role = user.Role;
                         dbUser.Status = user.Status;
-
-                        // Chỉ cập nhật pass nếu có thay đổi
-                        if (isUpdatePassword)
-                            dbUser.PasswordHash = user.PasswordHash;
+                        if (isUpdatePassword) dbUser.PasswordHash = user.PasswordHash;
+                        // Gọi SP update nếu muốn: proc_update_staff_user
                     }
                 }
                 else
                 {
+                    // Thêm mới
                     context.Users.Add(user);
+                    // Hoặc gọi SP: proc_create_user
                 }
                 await context.SaveChangesAsync();
             }
         }
 
+        /// <summary>
+        /// Xóa User (Sử dụng SP xóa nhân viên)
+        /// </summary>
         public async Task DeleteUserAsync(int userId)
         {
             using (var context = new AppDbContext())
             {
-                var user = new User { UserId = userId };
-                context.Users.Remove(user);
-                await context.SaveChangesAsync();
+                // Gọi SP: proc_delete_staff
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_staff({userId})");
             }
         }
-        // ... (Các hàm cũ giữ nguyên) ...
 
-        // --- [PROFILE] QUẢN LÝ HỒ SƠ ---
+        /// <summary>
+        /// Đổi mật khẩu (Sử dụng SP)
+        /// </summary>
+        public async Task ChangePasswordAsync(int userId, string newHash)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_update_user_password
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_update_user_password({userId}, {newHash})");
+            }
+        }
+
+        #endregion
+
+        // =================================================================================
+        // #REGION: PROFILE MANAGEMENT (HỒ SƠ CÁ NHÂN)
+        // =================================================================================
+        #region Profile
+
         public async Task<User?> GetUserWithDetailAsync(int userId)
         {
             using (var context = new AppDbContext())
             {
+                // Dùng Include để lấy thông tin chi tiết bảng user_detail
                 return await context.Users
                     .Include(u => u.UserDetail)
                     .FirstOrDefaultAsync(u => u.UserId == userId);
@@ -135,51 +133,48 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                var detail = await context.UserDetails.FindAsync(userId);
-                if (detail == null)
-                {
-                    detail = new UserDetail { UserId = userId };
-                    context.UserDetails.Add(detail);
-                }
-                detail.FullName = fullName;
-                detail.Address = address;
-                detail.Phone = phone;
-                detail.DateOfBirth = dob;
-                await context.SaveChangesAsync();
-            }
-        }
-        public async Task<bool> HasPerformancesAsync(int showId)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Kiểm tra trong bảng Performances xem có record nào chứa ShowId này không
-                return await context.Performances.AnyAsync(p => p.ShowId == showId);
+                // Gọi SP Upsert (Thêm hoặc Cập nhật): proc_upsert_user_detail
+                // Lưu ý xử lý tham số NULL nếu cần
+                string sDob = dob.HasValue ? $"'{dob.Value:yyyy-MM-dd}'" : "NULL";
+                string sAddr = string.IsNullOrEmpty(address) ? "NULL" : $"'{address}'";
+                string sPhone = string.IsNullOrEmpty(phone) ? "NULL" : $"'{phone}'";
+
+                // Sử dụng ExecuteSqlRaw để dễ truyền chuỗi NULL
+                await context.Database.ExecuteSqlRawAsync(
+                    $"CALL proc_upsert_user_detail({userId}, '{fullName}', {sDob}, {sAddr}, {sPhone})");
             }
         }
 
-        // [THÊM MỚI] Xóa vở diễn
-        public async Task DeleteShowAsync(int showId)
+        #endregion
+
+        // =================================================================================
+        // #REGION: ACTOR MANAGEMENT (QUẢN LÝ DIỄN VIÊN)
+        // =================================================================================
+        #region Actor Management
+
+        /// <summary>
+        /// Lấy danh sách diễn viên, hỗ trợ tìm kiếm (Chuyển sang dùng SP mới)
+        /// </summary>
+        public async Task<List<Actor>> GetActorsAsync(string keyword = "")
         {
             using (var context = new AppDbContext())
             {
-                // Gọi Stored Procedure xóa vở diễn (đã có trong file SQL: proc_delete_show)
-                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_show({showId})");
+                // Gọi SP mới tạo: proc_get_actors
+                string search = keyword ?? "";
+                return await context.Actors
+                    .FromSqlInterpolated($"CALL proc_get_actors({search})")
+                    .ToListAsync();
             }
         }
 
-        // --- [SHOW] QUẢN LÝ VỞ DIỄN ---
-        public async Task<List<Genre>> GetGenresAsync()
-        {
-            using (var context = new AppDbContext())
-            {
-                return await context.Genres.OrderBy(g => g.GenreName).AsNoTracking().ToListAsync();
-            }
-        }
-
+        /// <summary>
+        /// Lấy danh sách diễn viên đang hoạt động (cho ComboBox)
+        /// </summary>
         public async Task<List<Actor>> GetActiveActorsAsync()
         {
             using (var context = new AppDbContext())
             {
+                // Logic đơn giản, giữ LINQ hoặc viết SP proc_get_active_actors
                 return await context.Actors
                     .Where(a => a.Status == "Hoạt động")
                     .OrderBy(a => a.FullName)
@@ -188,6 +183,84 @@ namespace StageX_DesktopApp.Services
             }
         }
 
+        /// <summary>
+        /// Lưu diễn viên (Sử dụng SP Upsert mới)
+        /// </summary>
+        public async Task SaveActorAsync(Actor actor)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP mới tạo: proc_save_actor
+                await context.Database.ExecuteSqlInterpolatedAsync($@"
+                    CALL proc_save_actor(
+                        {actor.ActorId}, 
+                        {actor.FullName}, 
+                        {actor.NickName}, 
+                        {actor.DateOfBirth}, 
+                        {actor.Gender}, 
+                        {actor.Email}, 
+                        {actor.Phone}, 
+                        {actor.Status}
+                    )");
+            }
+        }
+
+        /// <summary>
+        /// Xóa diễn viên (Sử dụng SP có sẵn)
+        /// </summary>
+        public async Task DeleteActorAsync(int actorId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_delete_actor
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_actor({actorId})");
+            }
+        }
+
+        #endregion
+
+        // =================================================================================
+        // #REGION: SHOW & GENRE (QUẢN LÝ VỞ DIỄN & THỂ LOẠI)
+        // =================================================================================
+        #region Show & Genre
+
+        // --- GENRE (THỂ LOẠI) ---
+
+        public async Task<List<Genre>> GetGenresAsync()
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP có sẵn: proc_get_all_genres
+                return await context.Genres
+                    .FromSqlRaw("CALL proc_get_all_genres()")
+                    .ToListAsync();
+            }
+        }
+
+        public async Task SaveGenreAsync(Genre genre)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP mới tạo: proc_save_genre
+                await context.Database.ExecuteSqlInterpolatedAsync(
+                    $"CALL proc_save_genre({genre.GenreId}, {genre.GenreName})");
+            }
+        }
+
+        public async Task DeleteGenreAsync(int id)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP có sẵn: proc_delete_genre
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_genre({id})");
+            }
+        }
+
+        // --- SHOW (VỞ DIỄN) ---
+
+        /// <summary>
+        /// Lấy danh sách vở diễn (Logic phức tạp nhiều Include -> Giữ LINQ)
+        /// </summary>
         public async Task<List<Show>> GetShowsAsync(string keyword, int genreId)
         {
             using (var context = new AppDbContext())
@@ -208,7 +281,20 @@ namespace StageX_DesktopApp.Services
             }
         }
 
-        // Hàm lưu Vở diễn (Xử lý Logic Many-to-Many phức tạp)
+        /// <summary>
+        /// Lấy danh sách vở diễn đơn giản (cho ComboBox)
+        /// </summary>
+        public async Task<List<Show>> GetShowsSimpleAsync()
+        {
+            using (var context = new AppDbContext())
+            {
+                return await context.Shows.OrderBy(s => s.Title).AsNoTracking().ToListAsync();
+            }
+        }
+
+        /// <summary>
+        /// Lưu vở diễn (Logic Many-to-Many phức tạp -> Giữ LINQ/EF Core)
+        /// </summary>
         public async Task SaveShowAsync(Show show, List<int> genreIds, List<int> actorIds)
         {
             using (var context = new AppDbContext())
@@ -221,12 +307,16 @@ namespace StageX_DesktopApp.Services
                         .Include(s => s.Actors)
                         .FirstOrDefaultAsync(s => s.ShowId == show.ShowId);
 
-                    // Cập nhật thông tin cơ bản
-                    dbShow.Title = show.Title;
-                    dbShow.Director = show.Director;
-                    dbShow.DurationMinutes = show.DurationMinutes;
-                    dbShow.PosterImageUrl = show.PosterImageUrl;
-                    dbShow.Description = show.Description;
+                    if (dbShow != null)
+                    {
+                        dbShow.Title = show.Title;
+                        dbShow.Director = show.Director;
+                        dbShow.DurationMinutes = show.DurationMinutes;
+                        dbShow.PosterImageUrl = show.PosterImageUrl;
+                        dbShow.Description = show.Description;
+                        // Status được trigger tự động update
+                    }
+                    else return;
                 }
                 else
                 {
@@ -234,7 +324,7 @@ namespace StageX_DesktopApp.Services
                     context.Shows.Add(dbShow);
                 }
 
-                // Xử lý quan hệ Nhiều-Nhiều (Logic cũ của bạn)
+                // Cập nhật quan hệ nhiều-nhiều
                 dbShow.Genres.Clear();
                 dbShow.Actors.Clear();
 
@@ -243,7 +333,6 @@ namespace StageX_DesktopApp.Services
                     var genres = await context.Genres.Where(g => genreIds.Contains(g.GenreId)).ToListAsync();
                     foreach (var g in genres) dbShow.Genres.Add(g);
                 }
-
                 if (actorIds.Any())
                 {
                     var actors = await context.Actors.Where(a => actorIds.Contains(a.ActorId)).ToListAsync();
@@ -251,31 +340,224 @@ namespace StageX_DesktopApp.Services
                 }
 
                 await context.SaveChangesAsync();
+                // Gọi SP cập nhật trạng thái show sau khi lưu
+                await context.Database.ExecuteSqlRawAsync("CALL proc_update_show_statuses()");
             }
         }
 
-        // --- [PERFORMANCE] QUẢN LÝ SUẤT DIỄN ---
+        public async Task<bool> HasPerformancesAsync(int showId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_count_performances_by_show
+                // Hoặc giữ LINQ vì đơn giản
+                return await context.Performances.AnyAsync(p => p.ShowId == showId);
+            }
+        }
+
+        public async Task DeleteShowAsync(int showId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_delete_show
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_show({showId})");
+            }
+        }
+
+        #endregion
+
+        // =================================================================================
+        // #REGION: THEATER & SEAT (QUẢN LÝ RẠP & GHẾ)
+        // =================================================================================
+        #region Theater & Seat
+
         public async Task<List<Theater>> GetTheatersAsync()
         {
             using (var context = new AppDbContext())
             {
-                return await context.Theaters.OrderBy(t => t.Name).AsNoTracking().ToListAsync();
+                // Gọi SP: proc_get_all_theaters
+                return await context.Theaters
+                    .FromSqlRaw("CALL proc_get_all_theaters()")
+                    .ToListAsync();
             }
         }
 
-        public async Task<List<Show>> GetShowsSimpleAsync()
+        public async Task<List<Theater>> GetTheatersWithStatusAsync()
         {
             using (var context = new AppDbContext())
             {
-                return await context.Shows.OrderBy(s => s.Title).AsNoTracking().ToListAsync();
+                // Cần load kèm Performances để check CanDelete -> Giữ EF Core Include
+                var theaters = await context.Theaters
+                    .Include(t => t.Performances)
+                    .OrderBy(t => t.TheaterId)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                foreach (var t in theaters)
+                {
+                    t.CanDelete = (t.Performances == null || !t.Performances.Any());
+                    t.CanEdit = true;
+                }
+                return theaters;
             }
         }
+
+        // --- SEAT CATEGORY ---
+
+        public async Task<List<SeatCategory>> GetSeatCategoriesAsync()
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_get_all_seat_categories
+                return await context.SeatCategories
+                    .FromSqlRaw("CALL proc_get_all_seat_categories()")
+                    .ToListAsync();
+            }
+        }
+
+        public async Task SaveSeatCategoryAsync(SeatCategory cat)
+        {
+            using (var context = new AppDbContext())
+            {
+                if (cat.CategoryId > 0)
+                {
+                    // Gọi SP: proc_update_seat_category
+                    await context.Database.ExecuteSqlInterpolatedAsync(
+                        $"CALL proc_update_seat_category({cat.CategoryId}, {cat.CategoryName}, {cat.BasePrice}, {cat.ColorClass})");
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(cat.ColorClass)) cat.ColorClass = "E74C3C";
+                    // Gọi SP: proc_create_seat_category
+                    await context.Database.ExecuteSqlInterpolatedAsync(
+                        $"CALL proc_create_seat_category({cat.CategoryName}, {cat.BasePrice}, {cat.ColorClass})");
+                }
+            }
+        }
+
+        public async Task DeleteSeatCategoryAsync(int id)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_delete_seat_category
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_seat_category({id})");
+            }
+        }
+
+        public async Task<bool> IsSeatCategoryInUseAsync(int categoryId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Logic đơn giản, giữ LINQ
+                return await context.Seats.AnyAsync(s => s.CategoryId == categoryId);
+            }
+        }
+
+        // --- THEATER & SEATS ---
+
+        public async Task<List<Seat>> GetSeatsByTheaterAsync(int theaterId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // SP proc_get_seats_for_theater đã tồn tại và join sẵn category
+                // Tuy nhiên Model Seat cần map đúng. Nếu SP trả về cột khác Model -> Lỗi.
+                // Ở đây giữ LINQ Include cho an toàn với Model Seat hiện tại.
+                return await context.Seats
+                    .Where(s => s.TheaterId == theaterId)
+                    .Include(s => s.SeatCategory)
+                    .OrderBy(s => s.RowChar).ThenBy(s => s.SeatNumber)
+                    .ToListAsync();
+            }
+        }
+
+        /// <summary>
+        /// Tạo Rạp mới kèm danh sách ghế (Dùng SP proc_create_theater)
+        /// </summary>
+        public async Task SaveNewTheaterAsync(Theater theater, List<Seat> seats)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Bước 1: Lưu thông tin Rạp trước để lấy TheaterId
+                theater.Status = "Đã hoạt động";
+                context.Theaters.Add(theater);
+                await context.SaveChangesAsync(); // Sau lệnh này, theater.TheaterId sẽ có giá trị
+
+                // Bước 2: Lưu danh sách ghế đã chỉnh sửa (Xóa lối đi, gán màu...)
+                foreach (var s in seats)
+                {
+                    s.SeatId = 0; // Reset ID để thêm mới
+                    s.TheaterId = theater.TheaterId; // Gán vào rạp vừa tạo
+
+                    // Map ID hạng ghế nếu có
+                    if (s.SeatCategory != null)
+                    {
+                        s.CategoryId = s.SeatCategory.CategoryId;
+                    }
+
+                    s.SeatCategory = null; // Ngắt tham chiếu object để tránh lỗi EF
+                    context.Seats.Add(s);
+                }
+
+                // Cập nhật lại tổng số ghế thực tế cho Rạp
+                theater.TotalSeats = seats.Count;
+                context.Theaters.Update(theater);
+
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public async Task DeleteTheaterAsync(int theaterId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_delete_theater (Trong DB đã có logic xóa ghế trước)
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_theater({theaterId})");
+            }
+        }
+
+        public async Task UpdateTheaterStructureAsync(Theater theater, List<Seat> newSeats)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Logic cập nhật cấu trúc phức tạp (xóa cũ thêm mới)
+                // Giữ nguyên logic EF Core Transaction để đảm bảo an toàn
+                var dbTheater = await context.Theaters.FindAsync(theater.TheaterId);
+                if (dbTheater != null)
+                {
+                    dbTheater.Name = theater.Name;
+                    dbTheater.TotalSeats = newSeats.Count;
+                }
+
+                // Gọi SP xóa ghế cũ: proc_delete_seats_by_theater
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_seats_by_theater({theater.TheaterId})");
+
+                // Thêm ghế mới (Bulk insert bằng EF)
+                foreach (var s in newSeats)
+                {
+                    s.SeatId = 0;
+                    s.TheaterId = theater.TheaterId;
+                    if (s.SeatCategory != null) s.CategoryId = s.SeatCategory.CategoryId;
+                    s.SeatCategory = null;
+                    context.Seats.Add(s);
+                }
+                await context.SaveChangesAsync();
+            }
+        }
+
+        #endregion
+
+        // =================================================================================
+        // #REGION: PERFORMANCE (QUẢN LÝ SUẤT DIỄN)
+        // =================================================================================
+        #region Performance
 
         public async Task<List<Performance>> GetPerformancesAsync(string showName, int theaterId, DateTime? date)
         {
             using (var context = new AppDbContext())
             {
+                // Cập nhật trạng thái trước khi lấy
                 await context.Database.ExecuteSqlRawAsync("CALL proc_update_statuses()");
+
                 var query = context.Performances
                     .Include(p => p.Show)
                     .Include(p => p.Theater)
@@ -285,27 +567,20 @@ namespace StageX_DesktopApp.Services
 
                 if (!string.IsNullOrWhiteSpace(showName))
                     query = query.Where(p => p.Show.Title.Contains(showName));
-
                 if (theaterId > 0)
                     query = query.Where(p => p.TheaterId == theaterId);
-
                 if (date.HasValue)
                     query = query.Where(p => p.PerformanceDate.Date == date.Value.Date);
 
                 var list = await query.ToListAsync();
 
-                // [THÊM MỚI]: Kiểm tra Booking cho từng suất diễn
-                // (Cách tối ưu hơn là dùng GroupJoin hoặc Select, nhưng cách này an toàn và dễ hiểu với cấu trúc hiện tại)
+                // Check Booking
                 foreach (var p in list)
                 {
-                    // Kiểm tra trong bảng Bookings xem có đơn nào dính tới PerformanceId này không
                     p.HasBookings = await context.Bookings.AnyAsync(b => b.PerformanceId == p.PerformanceId);
-
-                    // Map tên hiển thị
                     p.ShowTitle = p.Show?.Title;
                     p.TheaterName = p.Theater?.Name;
                 }
-
                 return list;
             }
         }
@@ -314,24 +589,29 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                if (perf.PerformanceId > 0)
+                // Gọi SP: proc_create_performance (Nếu là thêm mới)
+                // Tuy nhiên hàm này cần xử lý cả Update. Để đơn giản giữ EF Core cho Update
+                // hoặc viết thêm SP proc_update_performance
+
+                if (perf.PerformanceId == 0)
                 {
-                    context.Performances.Update(perf);
+                    // Thêm mới bằng SP
+                    string sDate = $"'{perf.PerformanceDate:yyyy-MM-dd}'";
+                    string sStart = $"'{perf.StartTime}'";
+                    // Tính EndTime
+                    var show = await context.Shows.FindAsync(perf.ShowId);
+                    TimeSpan endTime = perf.StartTime.Add(TimeSpan.FromMinutes(show?.DurationMinutes ?? 0));
+                    string sEnd = $"'{endTime}'";
+
+                    await context.Database.ExecuteSqlRawAsync(
+                        $"CALL proc_create_performance({perf.ShowId}, {perf.TheaterId}, {sDate}, {sStart}, {sEnd}, {perf.Price})");
                 }
                 else
                 {
-                    context.Performances.Add(perf);
+                    // Cập nhật bằng EF
+                    context.Performances.Update(perf);
+                    await context.SaveChangesAsync();
                 }
-
-                // Tính giờ kết thúc dựa trên thời lượng vở diễn
-                var show = await context.Shows.FindAsync(perf.ShowId);
-                if (show != null)
-                {
-                    perf.EndTime = perf.StartTime.Add(TimeSpan.FromMinutes(show.DurationMinutes));
-                }
-
-                await context.SaveChangesAsync();
-                await context.Database.ExecuteSqlRawAsync("CALL proc_update_statuses()");
             }
         }
 
@@ -339,302 +619,30 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
+                // Xóa bằng EF
                 var p = new Performance { PerformanceId = id };
                 context.Performances.Remove(p);
                 await context.SaveChangesAsync();
             }
         }
-        // ... (Code cũ) ...
 
-        // --- [GENRE] QUẢN LÝ THỂ LOẠI ---
-        public async Task SaveGenreAsync(Genre genre)
-        {
-            using (var context = new AppDbContext())
-            {
-                if (genre.GenreId > 0)
-                {
-                    var dbGenre = await context.Genres.FindAsync(genre.GenreId);
-                    if (dbGenre != null) dbGenre.GenreName = genre.GenreName;
-                }
-                else
-                {
-                    context.Genres.Add(genre);
-                }
-                await context.SaveChangesAsync();
-            }
-        }
+        #endregion
 
-        public async Task DeleteGenreAsync(int id)
-        {
-            using (var context = new AppDbContext())
-            {
-                var g = new Genre { GenreId = id };
-                context.Genres.Remove(g);
-                await context.SaveChangesAsync();
-            }
-        }
-
-        // --- [THEATER & SEAT & CATEGORY] QUẢN LÝ RẠP & GHẾ ---
-
-        // Lấy danh sách Rạp kèm thông tin có thể xóa hay không
-        public async Task<List<Theater>> GetTheatersWithStatusAsync()
-        {
-            using (var context = new AppDbContext())
-            {
-                var theaters = await context.Theaters
-                    .Include(t => t.Performances)
-                    .OrderBy(t => t.TheaterId)
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                foreach (var t in theaters)
-                {
-                    // Logic: Chỉ xóa được nếu chưa có suất diễn nào
-                    t.CanDelete = (t.Performances == null || !t.Performances.Any());
-                    // Logic: Đã có suất diễn thì chỉ Xem, không Sửa cấu trúc
-                    t.CanEdit = true;
-                }
-                return theaters;
-            }
-        }
-
-        // Lấy danh sách Hạng ghế
-        public async Task<List<SeatCategory>> GetSeatCategoriesAsync()
-        {
-            using (var context = new AppDbContext())
-            {
-                return await context.SeatCategories.OrderBy(c => c.CategoryId).AsNoTracking().ToListAsync();
-            }
-        }
-        public async Task<bool> IsSeatCategoryInUseAsync(int categoryId)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Kiểm tra trong bảng Seats xem có dòng nào dùng CategoryId này không
-                return await context.Seats.AnyAsync(s => s.CategoryId == categoryId);
-            }
-        }
-        // Lưu Rạp Mới kèm danh sách Ghế (Transaction)
-        public async Task SaveNewTheaterAsync(Theater theater, List<Seat> seats)
-        {
-            using (var context = new AppDbContext())
-            {
-                context.Theaters.Add(theater);
-                await context.SaveChangesAsync(); // Lấy ID rạp
-
-                foreach (var s in seats)
-                {
-                    s.TheaterId = theater.TheaterId;
-                    s.SeatCategory = null; // Reset để tránh EF add lại category
-                    context.Seats.Add(s);
-                }
-                await context.SaveChangesAsync();
-            }
-        }
-        public async Task SaveSeatCategoryAsync(SeatCategory cat)
-        {
-            using (var context = new AppDbContext())
-            {
-                if (cat.CategoryId > 0)
-                {
-                    var dbCat = await context.SeatCategories.FindAsync(cat.CategoryId);
-                    if (dbCat != null)
-                    {
-                        dbCat.CategoryName = cat.CategoryName;
-                        dbCat.BasePrice = cat.BasePrice;
-                    }
-                }
-                else
-                {
-                    // Logic random màu (giữ nguyên hoặc chuyển sang ViewModel cũng được)
-                    if (string.IsNullOrEmpty(cat.ColorClass)) cat.ColorClass = "E74C3C";
-                    context.SeatCategories.Add(cat);
-                }
-                await context.SaveChangesAsync();
-            }
-        }
-
-        public async Task DeleteSeatCategoryAsync(int id)
-        {
-            using (var context = new AppDbContext())
-            {
-                var c = new SeatCategory { CategoryId = id };
-                context.SeatCategories.Remove(c);
-                await context.SaveChangesAsync();
-            }
-        }
-
-        // Lấy danh sách Ghế của một rạp
-        public async Task<List<Seat>> GetSeatsByTheaterAsync(int theaterId)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Load ghế kèm hạng ghế để lấy màu
-                return await context.Seats
-                    .Where(s => s.TheaterId == theaterId)
-                    .Include(s => s.SeatCategory)
-                    .OrderBy(s => s.RowChar).ThenBy(s => s.SeatNumber)
-                    .ToListAsync();
-            }
-        }
-
-
-        // Cập nhật tên Rạp
-        public async Task UpdateTheaterNameAsync(int id, string name)
-        {
-            using (var context = new AppDbContext())
-            {
-                var t = await context.Theaters.FindAsync(id);
-                if (t != null) { t.Name = name; await context.SaveChangesAsync(); }
-            }
-        }
-
-        // Cập nhật danh sách ghế (Gán hạng)
-        public async Task UpdateSeatsCategoryAsync(List<Seat> seatsToUpdate)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Cách "Cũ nhưng xịn": Sử dụng cơ chế Batch Update của Entity Framework
-                foreach (var s in seatsToUpdate)
-                {
-                    if (s.SeatId > 0)
-                    {
-                        // Tạo một object giả chỉ chứa ID và thông tin cần sửa
-                        var dbSeat = new Seat { SeatId = s.SeatId, CategoryId = s.CategoryId };
-
-                        // Attach vào context để nó biết đây là dữ liệu có sẵn
-                        context.Seats.Attach(dbSeat);
-
-                        // Chỉ đánh dấu trường CategoryId là đã thay đổi -> EF chỉ sinh SQL update cột này
-                        context.Entry(dbSeat).Property(x => x.CategoryId).IsModified = true;
-                    }
-                }
-
-                // SaveChangesAsync sẽ tự động tối ưu và gửi lệnh xuống DB một lần
-                await context.SaveChangesAsync();
-            }
-        }
-        public async Task DeleteTheaterAsync(int theaterId)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Xóa ghế trước rồi xóa rạp (Gọi SP)
-                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_seats_by_theater({theaterId})");
-                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_theater({theaterId})");
-            }
-        }
-        // [THÊM MỚI] Hàm cập nhật toàn bộ cấu trúc rạp (Dùng cho nút Cập nhật)
-        public async Task UpdateTheaterStructureAsync(Theater theater, List<Seat> newSeats)
-        {
-            using (var context = new AppDbContext())
-            {
-                // 1. Cập nhật thông tin cơ bản của Rạp
-                var dbTheater = await context.Theaters.FindAsync(theater.TheaterId);
-                if (dbTheater != null)
-                {
-                    dbTheater.Name = theater.Name;
-                    dbTheater.TotalSeats = newSeats.Count; // Cập nhật lại tổng số ghế mới
-                                                           // dbTheater.Status giữ nguyên
-                }
-
-                // 2. Xóa toàn bộ ghế cũ của rạp này (Gọi Procedure có sẵn)
-                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_seats_by_theater({theater.TheaterId})");
-
-                // 3. Thêm lại danh sách ghế mới từ giao diện
-                foreach (var s in newSeats)
-                {
-                    // Reset ID để EF hiểu là thêm mới
-                    s.SeatId = 0;
-                    s.TheaterId = theater.TheaterId;
-
-                    // Quan trọng: Gán lại CategoryId nếu object Category có dữ liệu
-                    if (s.SeatCategory != null) s.CategoryId = s.SeatCategory.CategoryId;
-                    s.SeatCategory = null; // Ngắt tham chiếu object để tránh lỗi EF add nhầm Category
-
-                    context.Seats.Add(s);
-                }
-
-                await context.SaveChangesAsync();
-            }
-        }
-        // ... (Code cũ) ...
-
-        // --- [DASHBOARD] BẢNG ĐIỀU KHIỂN ---
-
-        public async Task<DashboardSummary> GetDashboardSummaryAsync()
-        {
-            using (var context = new AppDbContext())
-            {
-                var result = await context.DashboardSummaries.FromSqlRaw("CALL proc_dashboard_summary()").ToListAsync();
-                return result.FirstOrDefault() ?? new DashboardSummary();
-            }
-        }
-
-        public async Task<List<RevenueMonthly>> GetRevenueMonthlyAsync()
-        {
-            using (var context = new AppDbContext())
-            {
-                return await context.RevenueMonthlies.FromSqlRaw("CALL proc_revenue_monthly()").ToListAsync();
-            }
-        }
-
-        public async Task<List<ChartDataModel>> GetOccupancyDataAsync(string filter)
-        {
-            using (var context = new AppDbContext())
-            {
-                string sql = filter switch
-                {
-                    "month" => "CALL proc_chart_last_4_weeks()",
-                    "year" => "CALL proc_sold_tickets_yearly()",
-                    _ => "CALL proc_chart_last_7_days()"
-                };
-                return await context.ChartDatas.FromSqlRaw(sql).ToListAsync();
-            }
-        }
-
-        // [HÀM BỊ THIẾU - NGUYÊN NHÂN LỖI]
-        public async Task<List<TopShow>> GetTopShowsAsync(DateTime? start = null, DateTime? end = null)
-        {
-            using var context = new AppDbContext();
-
-            // Chuyển ngày sang chuỗi SQL chuẩn hoặc NULL nếu không lọc
-            string sStart = start.HasValue ? $"'{start.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
-            string sEnd = end.HasValue ? $"'{end.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
-
-            // Gọi Stored Procedure mới
-            return await context.TopShows
-                .FromSqlRaw($"CALL proc_top5_shows_by_date_range({sStart}, {sEnd})")
-                .ToListAsync();
-        }
-
-        // [HÀM BỔ SUNG CHO FILTER NGÀY]
-        public async Task<List<TopShow>> GetTopShowsByDateRangeAsync(DateTime? start, DateTime? end)
-        {
-            using (var context = new AppDbContext())
-            {
-                string sStart = start.HasValue ? $"'{start.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
-                string sEnd = end.HasValue ? $"'{end.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
-
-                return await context.TopShows
-                    .FromSqlRaw($"CALL proc_top5_shows_by_date_range({sStart}, {sEnd})")
-                    .ToListAsync();
-            }
-        }
-
-        // --- [BOOKING] QUẢN LÝ ĐƠN HÀNG ---
+        // =================================================================================
+        // #REGION: BOOKING & SALES (QUẢN LÝ ĐƠN HÀNG & BÁN VÉ)
+        // =================================================================================
+        #region Booking & Sales
 
         public async Task<List<Booking>> GetBookingsAsync()
         {
             using (var context = new AppDbContext())
             {
-                // Logic Include phức tạp của bạn
+                // Query phức tạp lấy dữ liệu lồng nhau -> BẮT BUỘC giữ LINQ Include
                 return await context.Bookings
                     .Include(b => b.User).ThenInclude(u => u.UserDetail)
                     .Include(b => b.Performance).ThenInclude(p => p.Show)
                     .Include(b => b.Performance).ThenInclude(p => p.Theater)
-                    .Include(b => b.Tickets).ThenInclude(t => t.Seat)
-                    // [CẬP NHẬT] Load thêm SeatCategory để tính giá vé
-                    .Include(b => b.Tickets) .ThenInclude(t => t.Seat) .ThenInclude(s => s.SeatCategory)
+                    .Include(b => b.Tickets).ThenInclude(t => t.Seat).ThenInclude(s => s.SeatCategory)
                     .Include(b => b.CreatedByUser).ThenInclude(u => u.UserDetail)
                     .OrderByDescending(b => b.CreatedAt)
                     .AsNoTracking()
@@ -642,25 +650,13 @@ namespace StageX_DesktopApp.Services
             }
         }
 
-        // --- [AUTH] ĐỔI MẬT KHẨU ---
-        public async Task ChangePasswordAsync(int userId, string newHash)
-        {
-            using (var context = new AppDbContext())
-            {
-                var user = await context.Users.FindAsync(userId);
-                if (user != null)
-                {
-                    user.PasswordHash = newHash;
-                    await context.SaveChangesAsync();
-                }
-            }
-        }
+        // --- SELL TICKET HELPERS (Sử dụng SP tối đa) ---
 
-        // --- [SELL TICKET] BÁN VÉ ---
         public async Task<List<ShowInfo>> GetActiveShowsAsync()
         {
             using (var context = new AppDbContext())
             {
+                // Gọi SP: proc_active_shows
                 return await context.ShowInfos.FromSqlRaw("CALL proc_active_shows()").ToListAsync();
             }
         }
@@ -669,6 +665,7 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
+                // Gọi SP: proc_performances_by_show
                 return await context.PerformanceInfos
                     .FromSqlInterpolated($"CALL proc_performances_by_show({showId})")
                     .ToListAsync();
@@ -679,6 +676,7 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
+                // Gọi SP: proc_top3_nearest_performances_extended
                 return await context.PeakPerformanceInfos
                     .FromSqlRaw("CALL proc_top3_nearest_performances_extended()")
                     .ToListAsync();
@@ -689,17 +687,18 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
+                // Gọi SP: proc_seats_with_status
                 return await context.SeatStatuses
                     .FromSqlInterpolated($"CALL proc_seats_with_status({perfId})")
                     .ToListAsync();
             }
         }
 
-        // Hàm tạo đơn hàng (POS)
         public async Task<int> CreateBookingPOSAsync(int? customerId, int perfId, decimal total, int staffId)
         {
             using (var context = new AppDbContext())
             {
+                // Gọi SP: proc_create_booking_pos
                 var results = await context.CreateBookingResults
                     .FromSqlInterpolated($"CALL proc_create_booking_pos({customerId}, {perfId}, {total}, {staffId})")
                     .ToListAsync();
@@ -711,20 +710,79 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // 1. Tạo Payment (Giữ nguyên)
-                // Lưu ý: Cú pháp Interpolated bên dưới cần sửa lại chuỗi cho đúng chuẩn C#
-                await context.Database.ExecuteSqlInterpolatedAsync(
-                    $"CALL proc_create_payment({bookingId}, {total}, 'Thành công', '', {method})");
+                // 1. Tạo Payment (Gọi SP: proc_create_payment)
+                // Lưu ý: Chuỗi trong SQL cần nằm trong dấu nháy đơn
+                string sqlPayment = $"CALL proc_create_payment({bookingId}, {total}, 'Thành công', 'POS', '{method}')";
+                await context.Database.ExecuteSqlRawAsync(sqlPayment);
 
-                // 2. Tạo Tickets (ĐÃ SỬA)
+                // 2. Tạo Tickets (Gọi SP: proc_create_ticket cho từng ghế)
                 foreach (var seatId in seatIds)
                 {
-                    // Không cần generate code ở C# nữa
-                    // Gọi SP chỉ với 2 tham số: bookingId và seatId
                     await context.Database.ExecuteSqlInterpolatedAsync(
                         $"CALL proc_create_ticket({bookingId}, {seatId})");
                 }
             }
         }
+
+        #endregion
+
+        // =================================================================================
+        // #REGION: DASHBOARD (THỐNG KÊ BÁO CÁO)
+        // =================================================================================
+        #region Dashboard
+
+        public async Task<DashboardSummary> GetDashboardSummaryAsync()
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_dashboard_summary
+                var result = await context.DashboardSummaries
+                    .FromSqlRaw("CALL proc_dashboard_summary()")
+                    .ToListAsync();
+                return result.FirstOrDefault() ?? new DashboardSummary();
+            }
+        }
+
+        public async Task<List<RevenueMonthly>> GetRevenueMonthlyAsync()
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_revenue_monthly
+                return await context.RevenueMonthlies
+                    .FromSqlRaw("CALL proc_revenue_monthly()")
+                    .ToListAsync();
+            }
+        }
+
+        public async Task<List<ChartDataModel>> GetOccupancyDataAsync(string filter)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi các SP thống kê tương ứng
+                string sql = filter switch
+                {
+                    "month" => "CALL proc_chart_last_4_weeks()",
+                    "year" => "CALL proc_sold_tickets_yearly()",
+                    _ => "CALL proc_chart_last_7_days()"
+                };
+                return await context.ChartDatas.FromSqlRaw(sql).ToListAsync();
+            }
+        }
+
+        public async Task<List<TopShow>> GetTopShowsAsync(DateTime? start = null, DateTime? end = null)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Gọi SP: proc_top5_shows_by_date_range
+                string sStart = start.HasValue ? $"'{start.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
+                string sEnd = end.HasValue ? $"'{end.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
+
+                return await context.TopShows
+                    .FromSqlRaw($"CALL proc_top5_shows_by_date_range({sStart}, {sEnd})")
+                    .ToListAsync();
+            }
+        }
+
+        #endregion
     }
 }

@@ -230,7 +230,7 @@ namespace StageX_DesktopApp.ViewModels
         {
             decimal total = BillSeats.Sum(x => x.Price); TotalText = $"Thành tiền: {total:N0}đ";
             if (decimal.TryParse(CashGiven, out decimal given)) { decimal change = given - total; ChangeText = change >= 0 ? $"{change:N0}đ" : $"-{Math.Abs(change):N0}đ"; } else ChangeText = "0đ";
-            if (!IsCashPayment && total > 0) { IsQrVisible = true; QrImageSource = await _qrService.GenerateQrCodeAsync((int)total, "Thanh toan STAGEX"); } else { IsQrVisible = false; QrImageSource = null; }
+            if (!IsCashPayment && total > 0) { IsQrVisible = true; QrImageSource = await _qrService.GenerateQrCodeAsync((int)total, "Thanh toan ve STAGEX"); } else { IsQrVisible = false; QrImageSource = null; }
         }
         [RelayCommand] private void SelectPayment(string method) { IsCashPayment = (method == "Cash"); UpdateTotal(); }
         [RelayCommand]
