@@ -11,8 +11,8 @@ namespace StageX_DesktopApp.Services
     {
         // --- CẤU HÌNH TÀI KHOẢN NHẬN TIỀN ---
         // Bạn hãy thay đổi các thông số này cho đúng với tài khoản thực tế
-        private const string ACCOUNT_NO = "1010101010";       // Số tài khoản
-        private const string ACCOUNT_NAME = "NGUYEN VAN A";   // Tên chủ tài khoản (Không dấu)
+        private const string ACCOUNT_NO = "9923192231";       // Số tài khoản
+        private const string ACCOUNT_NAME = "LE THI MY TRANG";   // Tên chủ tài khoản (Không dấu)
         private const int ACQ_ID = 970436;                    // Mã Bin ngân hàng (VD: 970436 là Vietcombank, 970422 là MBBank)
         private const string TEMPLATE = "compact2";           // Mẫu QR (compact, compact2, qr_only, print)
 
