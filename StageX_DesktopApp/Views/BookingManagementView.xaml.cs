@@ -104,7 +104,7 @@ namespace StageX_DesktopApp.Views
                     page.Height = XUnit.FromMillimeter(148);
 
                     XGraphics gfx = XGraphics.FromPdfPage(page);
-                    double margin = 12; double y = 18;
+                    double margin = 12; double y = 5;
                     double pageWidth = page.Width;
 
                     gfx.DrawRectangle(bgBrush, 0, 0, page.Width, page.Height);
@@ -118,7 +118,7 @@ namespace StageX_DesktopApp.Views
                         {
                             XImage logo = XImage.FromFile(logoPath);
                             gfx.DrawImage(logo, (pageWidth - 50) / 2, y, 50, 50);
-                            y += 55;
+                            y += 50;
                         }
                         else y += 10;
                     }
@@ -159,13 +159,13 @@ namespace StageX_DesktopApp.Views
                     // [CẬP NHẬT] In thông tin riêng của vé này
                     gfx.DrawString("Ghế:", fontHeader, textGray, leftX, y);
                     gfx.DrawString(ticket.SeatLabel, fontTitle, textGold, leftX + 60, y);
-                    y += 35;
+                    y += 15;
 
 
                     // [CẬP NHẬT] Thay chữ TỔNG CỘNG bằng GIÁ VÉ và in giá riêng
                     gfx.DrawString("GIÁ VÉ:", fontHeader, textWhite, leftX, y + 5);
                     gfx.DrawString($"{ticket.Price:N0} đ", fontTitle, textGold, pageWidth - leftX - 100, y + 0);
-                    y += 40;
+                    y += 20;
 
                     // Tính toán vị trí
                     double bcW = 160;
