@@ -14,6 +14,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using StageX_DesktopApp.Services;
 
 namespace StageX_DesktopApp.Views
 {
@@ -136,6 +137,11 @@ namespace StageX_DesktopApp.Views
         {
             try
             {
+                LoadingOverlay.Visibility = Visibility.Visible;
+                ExportProgressBar.Value = 0;
+                ProgressStatusText.Text = "Đang khởi tạo...";
+                await Task.Delay(50);
+
                 string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"BaoCao_StageX_{DateTime.Now:HHmmss}.pdf");
                 var doc = new PdfDocument();
                 doc.Info.Title = "Báo cáo Dashboard StageX";
@@ -151,33 +157,59 @@ namespace StageX_DesktopApp.Views
                 XFont fTitle = new XFont("Arial", 24);
                 XFont fHeader = new XFont("Arial", 16);
 
+                ExportProgressBar.Value = 10;
+                ProgressStatusText.Text = "Đang vẽ tiêu đề...";
+                await Task.Delay(20);
+
                 // 1. Vẽ Tiêu đề & KPI (Giữ nguyên hoặc vẽ đơn giản)
                 gfx.DrawString("BÁO CÁO TỔNG QUAN", fTitle, XBrushes.Yellow, new XRect(0, 20, page.Width, 30), XStringFormats.TopCenter);
 
+                ExportProgressBar.Value = 30;
+                ProgressStatusText.Text = "Đang xử lý biểu đồ Doanh thu...";
+                await Task.Delay(50);
+
                 // 2. CHỤP ẢNH BIỂU ĐỒ - TĂNG KÍCH THƯỚC VÀ TỈ LỆ
-                // Mẹo: Tăng chiều rộng/cao lúc chụp để ảnh nét hơn, và đủ chỗ cho Legend
 
                 // Chart 1: Revenue
                 gfx.DrawString("DOANH THU", fHeader, XBrushes.Cyan, 40, 80);
                 var imgRevenue = CaptureChartToXImage(RevenueChart, 800, 400); // Tăng height lên 400
                 if (imgRevenue != null) gfx.DrawImage(imgRevenue, 40, 110, 350, 180); // Vẽ vào PDF với kích thước nhỏ hơn
 
+                ExportProgressBar.Value = 50;
+                ProgressStatusText.Text = "Đang xử lý biểu đồ Tình trạng vé...";
+                await Task.Delay(50);
+
                 // Chart 2: Occupancy (SỬA LỖI BỊ CẮT: Tăng chiều cao capture)
                 gfx.DrawString("TÌNH TRẠNG VÉ", fHeader, XBrushes.Cyan, 420, 80);
                 var imgOccupancy = CaptureChartToXImage(OccupancyChart, 800, 500); // Height 500 để chứa hết Legend và Trục X
                 if (imgOccupancy != null) gfx.DrawImage(imgOccupancy, 420, 110, 350, 180);
+
+                ExportProgressBar.Value = 70;
+                ProgressStatusText.Text = "Đang xử lý biểu đồ Tỷ lệ vé...";
+                await Task.Delay(50);
 
                 // Chart 3: Pie Chart
                 gfx.DrawString("TỶ LỆ VÉ", fHeader, XBrushes.Cyan, 40, 310);
                 var imgPie = CaptureChartToXImage(ShowPieChart, 600, 400); // Pie cần rộng để hiện label 2 bên
                 if (imgPie != null) gfx.DrawImage(imgPie, 40, 340, 300, 200);
 
+                ExportProgressBar.Value = 90;
+                ProgressStatusText.Text = "Đang xử lý bảng số liệu...";
+                await Task.Delay(50);
+
                 // Chart 4: Table Top 5
                 gfx.DrawString("TOP 5 VỞ DIỄN", fHeader, XBrushes.Cyan, 420, 310);
                 var imgTable = CaptureChartToXImage(TopShowsGrid, 800, 400);
                 if (imgTable != null) gfx.DrawImage(imgTable, 420, 340, 350, 200);
 
+                ExportProgressBar.Value = 100;
+                ProgressStatusText.Text = "Đang lưu file...";
+                await Task.Delay(100);
+
+                SoundManager.PlaySuccess();
                 doc.Save(filePath);
+                LoadingOverlay.Visibility = Visibility.Collapsed;
+
                 Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
             }
             catch (Exception ex) { MessageBox.Show("Lỗi PDF: " + ex.Message); }

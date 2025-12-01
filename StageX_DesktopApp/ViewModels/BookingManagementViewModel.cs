@@ -16,6 +16,7 @@ namespace StageX_DesktopApp.ViewModels
     {
         public string SeatLabel { get; set; }
         public decimal Price { get; set; }
+        public string TicketCode { get; set; }
     }
 
     public class BookingDisplayItem
@@ -43,7 +44,7 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private ObservableCollection<BookingDisplayItem> _bookings;
         [ObservableProperty] private string _searchKeyword;
         [ObservableProperty] private int _statusIndex = 0;
-
+        [ObservableProperty] private DateTime? _selectedDate;
         public event Action<BookingDisplayItem> RequestPrintTicket;
 
         public BookingManagementViewModel()
@@ -77,7 +78,8 @@ namespace StageX_DesktopApp.ViewModels
                     {
                         SeatLabel = $"{t.Seat?.RowChar}{t.Seat?.SeatNumber}",
                         // Công thức: Giá vé = Giá suất diễn + Giá hạng ghế (nếu có)
-                        Price = (b.Performance?.Price ?? 0) + (t.Seat?.SeatCategory?.BasePrice ?? 0)
+                        Price = (b.Performance?.Price ?? 0) + (t.Seat?.SeatCategory?.BasePrice ?? 0),
+                        TicketCode = t.TicketCode.ToString()
                     }).ToList()
 
                 }).ToList();
@@ -100,7 +102,12 @@ namespace StageX_DesktopApp.ViewModels
             if (!string.IsNullOrWhiteSpace(SearchKeyword))
             {
                 string k = SearchKeyword.ToLower();
-                query = query.Where(x => x.BookingId.ToString().Contains(k) || x.CustomerName.ToLower().Contains(k));
+                query = query.Where(x =>
+            x.BookingId.ToString().Contains(k) ||           // Tìm theo Mã đơn
+            x.CustomerName.ToLower().Contains(k) ||         // Tìm theo Tên khách
+            (x.CreatorName != null && x.CreatorName.ToLower().Contains(k)) || // Tìm theo Người lập
+            (x.ShowTitle != null && x.ShowTitle.ToLower().Contains(k))        // Tìm theo Tên vở diễn
+        );
             }
 
             string statusFilter = StatusIndex switch
@@ -118,8 +125,22 @@ namespace StageX_DesktopApp.ViewModels
                 else
                     query = query.Where(x => x.Status == statusFilter);
             }
-
+            if (SelectedDate.HasValue)
+            {
+                // So sánh phần ngày (Date) bỏ qua phần giờ
+                query = query.Where(x => x.CreatedAt.Date == SelectedDate.Value.Date);
+            }
             Bookings = new ObservableCollection<BookingDisplayItem>(query);
+        }
+        [RelayCommand]
+        private async Task Refresh()
+        {
+            // 1. Xóa sạch các điều kiện lọc trên giao diện
+            SearchKeyword = "";
+            StatusIndex = 0;      // Về "-- Tất cả --"
+            SelectedDate = null;  // Xóa chọn ngày
+
+            await LoadData();
         }
 
         [RelayCommand]

@@ -12,48 +12,6 @@
         <vm:GenreViewModel />
     </UserControl.DataContext>
 
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-
-        <Style x:Key="ButtonActionStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="Content" Value="Thêm">
-                    <Setter Property="Background" Value="#FF198754"/>
-                </Trigger>
-                <Trigger Property="Content" Value="Cập nhật">
-                    <Setter Property="Background" Value="#FFffc107"/>
-                    <Setter Property="Foreground" Value="Black"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="ButtonCancelStyle" TargetType="Button">
-            <Setter Property="Background" Value="Gray"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <Style x:Key="GridBtnEdit" TargetType="Button">
-            <Setter Property="Background" Value="#FF0D6EFD"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,3"/>
-            <Setter Property="BorderThickness" Value="0"/>
-        </Style>
-        <Style x:Key="GridBtnDelete" TargetType="Button">
-            <Setter Property="Background" Value="#FFDC3545"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,3"/>
-            <Setter Property="BorderThickness" Value="0"/>
-        </Style>
-    </UserControl.Resources>
-
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="25">
             <TextBlock Text="QUẢN LÝ THỂ LOẠI" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,20"/>
@@ -70,12 +28,12 @@
 
                         <TextBox Text="{Binding CurrentName, UpdateSourceTrigger=PropertyChanged}" 
                                  Grid.Column="0" Padding="8" FontSize="14"
-                                 Background="#FF333333" Foreground="White" BorderBrush="#555" BorderThickness="1"/>
+                                 Background="#EAEAEA" Foreground="black" BorderBrush="#555" BorderThickness="1" Height="32"/>
 
                         <Button Grid.Column="1" 
                                 Content="{Binding SaveButtonContent}" 
                                 Command="{Binding SaveDataCommand}"
-                                Style="{StaticResource ButtonActionStyle}" 
+                                Style="{StaticResource ButtonAddStyle}" 
                                 Margin="10,0,0,0" MinWidth="80"/>
 
                         <Button Grid.Column="2" Content="Hủy" 
@@ -87,13 +45,13 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="DANH SÁCH THỂ LOẠI" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,10,0,10"/>
+            <TextBlock Text="DANH SÁCH THỂ LOẠI" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,10"/>
 
             <DataGrid ItemsSource="{Binding Genres}"
                       IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
                       Background="Transparent" RowBackground="#FF1E1E1E" Foreground="White" BorderThickness="0"
-                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" RowHeaderWidth="0"
-                      HeadersVisibility="Column">
+                      GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
+                   RowHeaderWidth="0" HeadersVisibility="Column">
 
                 <DataGrid.Resources>
                     <Style TargetType="DataGridColumnHeader">
@@ -107,12 +65,12 @@
 
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding GenreId}" Width="50" Visibility="Collapsed"/>
-                    <DataGridTextColumn Header="TÊN THỂ LOẠI" Binding="{Binding GenreName}" Width="*"/>
+                    <DataGridTextColumn Header="TÊN THỂ LOẠI" Binding="{Binding GenreName}" Width="*" ElementStyle="{StaticResource LeftCell}"/>
 
-                    <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="Auto">
+                    <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="150">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Button Content="Sửa" Style="{StaticResource GridBtnEdit}" Margin="0,0,5,0"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                             CommandParameter="{Binding}"/>

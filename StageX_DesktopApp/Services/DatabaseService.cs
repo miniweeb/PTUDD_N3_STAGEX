@@ -162,29 +162,8 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // 1. KIỂM TRA ĐIỀU KIỆN (Yêu cầu của bạn)
-                // Kiểm tra xem vở diễn này có nằm trong bảng Performances không
-                bool hasPerformance = await context.Performances.AnyAsync(p => p.ShowId == showId);
-
-                if (hasPerformance)
-                {
-                    // Nếu có, ném ra lỗi để ViewModel bắt được và báo cho người dùng
-                    throw new Exception("Không thể xóa: Vở diễn này đang có suất diễn (đã/sắp diễn)!");
-                }
-
-                // 2. NẾU KHÔNG CÓ SUẤT DIỄN -> TIẾN HÀNH XÓA
-
-                // Xóa các quan hệ phụ (Thể loại, Diễn viên) trước để tránh lỗi khóa ngoại
-                // (Hoặc nếu trong SQL bạn đã để ON DELETE CASCADE thì không cần 2 dòng này)
-                await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM show_genres WHERE show_id = {showId}");
-                await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM show_actors WHERE show_id = {showId}");
-
-                // Xóa Vở diễn chính
-                var show = new Show { ShowId = showId };
-                context.Shows.Attach(show); // Attach để EF biết nó tồn tại
-                context.Shows.Remove(show);
-
-                await context.SaveChangesAsync();
+                // Gọi Stored Procedure xóa vở diễn (đã có trong file SQL: proc_delete_show)
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_show({showId})");
             }
         }
 
@@ -213,14 +192,6 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // 1. Lấy danh sách ID các vở diễn ĐÃ CÓ suất diễn (Đang dùng)
-                // Dùng Distinct để lấy danh sách duy nhất cho nhanh
-                var usedShowIds = await context.Performances
-                                               .Select(p => p.ShowId)
-                                               .Distinct()
-                                               .ToListAsync();
-
-                // 2. Query lấy danh sách Vở diễn như bình thường
                 var query = context.Shows
                     .Include(s => s.Genres)
                     .Include(s => s.Actors)
@@ -233,23 +204,7 @@ namespace StageX_DesktopApp.Services
                 if (genreId > 0)
                     query = query.Where(s => s.Genres.Any(g => g.GenreId == genreId));
 
-                var shows = await query.ToListAsync();
-
-                // 3. Duyệt qua danh sách để set CanDelete
-                foreach (var show in shows)
-                {
-                    // Nếu ShowId nằm trong danh sách đã dùng -> Không được xóa
-                    if (usedShowIds.Contains(show.ShowId))
-                    {
-                        show.CanDelete = false;
-                    }
-                    else
-                    {
-                        show.CanDelete = true;
-                    }
-                }
-
-                return shows;
+                return await query.ToListAsync();
             }
         }
 
@@ -280,11 +235,8 @@ namespace StageX_DesktopApp.Services
                 }
 
                 // Xử lý quan hệ Nhiều-Nhiều (Logic cũ của bạn)
-                if (dbShow.Genres == null) dbShow.Genres = new List<Genre>();
-                else dbShow.Genres.Clear();
-
-                if (dbShow.Actors == null) dbShow.Actors = new List<Actor>();
-                else dbShow.Actors.Clear();
+                dbShow.Genres.Clear();
+                dbShow.Actors.Clear();
 
                 if (genreIds.Any())
                 {
@@ -323,6 +275,7 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
+                await context.Database.ExecuteSqlRawAsync("CALL proc_update_statuses()");
                 var query = context.Performances
                     .Include(p => p.Show)
                     .Include(p => p.Theater)
@@ -378,6 +331,7 @@ namespace StageX_DesktopApp.Services
                 }
 
                 await context.SaveChangesAsync();
+                await context.Database.ExecuteSqlRawAsync("CALL proc_update_statuses()");
             }
         }
 
@@ -450,6 +404,14 @@ namespace StageX_DesktopApp.Services
             using (var context = new AppDbContext())
             {
                 return await context.SeatCategories.OrderBy(c => c.CategoryId).AsNoTracking().ToListAsync();
+            }
+        }
+        public async Task<bool> IsSeatCategoryInUseAsync(int categoryId)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Kiểm tra trong bảng Seats xem có dòng nào dùng CategoryId này không
+                return await context.Seats.AnyAsync(s => s.CategoryId == categoryId);
             }
         }
         // Lưu Rạp Mới kèm danh sách Ghế (Transaction)
@@ -561,41 +523,73 @@ namespace StageX_DesktopApp.Services
                 await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_theater({theaterId})");
             }
         }
+        // [THÊM MỚI] Hàm cập nhật toàn bộ cấu trúc rạp (Dùng cho nút Cập nhật)
+        public async Task UpdateTheaterStructureAsync(Theater theater, List<Seat> newSeats)
+        {
+            using (var context = new AppDbContext())
+            {
+                // 1. Cập nhật thông tin cơ bản của Rạp
+                var dbTheater = await context.Theaters.FindAsync(theater.TheaterId);
+                if (dbTheater != null)
+                {
+                    dbTheater.Name = theater.Name;
+                    dbTheater.TotalSeats = newSeats.Count; // Cập nhật lại tổng số ghế mới
+                                                           // dbTheater.Status giữ nguyên
+                }
 
+                // 2. Xóa toàn bộ ghế cũ của rạp này (Gọi Procedure có sẵn)
+                await context.Database.ExecuteSqlInterpolatedAsync($"CALL proc_delete_seats_by_theater({theater.TheaterId})");
+
+                // 3. Thêm lại danh sách ghế mới từ giao diện
+                foreach (var s in newSeats)
+                {
+                    // Reset ID để EF hiểu là thêm mới
+                    s.SeatId = 0;
+                    s.TheaterId = theater.TheaterId;
+
+                    // Quan trọng: Gán lại CategoryId nếu object Category có dữ liệu
+                    if (s.SeatCategory != null) s.CategoryId = s.SeatCategory.CategoryId;
+                    s.SeatCategory = null; // Ngắt tham chiếu object để tránh lỗi EF add nhầm Category
+
+                    context.Seats.Add(s);
+                }
+
+                await context.SaveChangesAsync();
+            }
+        }
         // ... (Code cũ) ...
 
         // --- [DASHBOARD] BẢNG ĐIỀU KHIỂN ---
 
         public async Task<DashboardSummary> GetDashboardSummaryAsync()
         {
-            using var context = new AppDbContext();
-            var results = await context.DashboardSummaries
-                .FromSqlRaw("CALL proc_dashboard_summary()")
-                .ToListAsync();
-            return results.FirstOrDefault();
+            using (var context = new AppDbContext())
+            {
+                var result = await context.DashboardSummaries.FromSqlRaw("CALL proc_dashboard_summary()").ToListAsync();
+                return result.FirstOrDefault() ?? new DashboardSummary();
+            }
         }
 
         public async Task<List<RevenueMonthly>> GetRevenueMonthlyAsync()
         {
-            using var context = new AppDbContext();
-            return await context.RevenueMonthlies
-                .FromSqlRaw("CALL proc_revenue_monthly()")
-                .ToListAsync();
+            using (var context = new AppDbContext())
+            {
+                return await context.RevenueMonthlies.FromSqlRaw("CALL proc_revenue_monthly()").ToListAsync();
+            }
         }
 
         public async Task<List<ChartDataModel>> GetOccupancyDataAsync(string filter)
         {
-            using var context = new AppDbContext();
-
-            // Gọi đúng các Proc đã sửa lỗi thời gian 2025
-            string sql = filter switch
+            using (var context = new AppDbContext())
             {
-                "month" => "CALL proc_chart_last_4_weeks()",
-                "year" => "CALL proc_sold_tickets_yearly()",
-                _ => "CALL proc_chart_last_7_days()"
-            };
-
-            return await context.ChartDatas.FromSqlRaw(sql).ToListAsync();
+                string sql = filter switch
+                {
+                    "month" => "CALL proc_chart_last_4_weeks()",
+                    "year" => "CALL proc_sold_tickets_yearly()",
+                    _ => "CALL proc_chart_last_7_days()"
+                };
+                return await context.ChartDatas.FromSqlRaw(sql).ToListAsync();
+            }
         }
 
         // [HÀM BỊ THIẾU - NGUYÊN NHÂN LỖI]
@@ -616,15 +610,15 @@ namespace StageX_DesktopApp.Services
         // [HÀM BỔ SUNG CHO FILTER NGÀY]
         public async Task<List<TopShow>> GetTopShowsByDateRangeAsync(DateTime? start, DateTime? end)
         {
-            using var context = new AppDbContext();
+            using (var context = new AppDbContext())
+            {
+                string sStart = start.HasValue ? $"'{start.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
+                string sEnd = end.HasValue ? $"'{end.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
 
-            // Chuyển ngày sang chuỗi SQL hoặc NULL
-            string sStart = start.HasValue ? $"'{start.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
-            string sEnd = end.HasValue ? $"'{end.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL";
-
-            return await context.TopShows
-                .FromSqlRaw($"CALL proc_top5_shows_by_date_range({sStart}, {sEnd})")
-                .ToListAsync();
+                return await context.TopShows
+                    .FromSqlRaw($"CALL proc_top5_shows_by_date_range({sStart}, {sEnd})")
+                    .ToListAsync();
+            }
         }
 
         // --- [BOOKING] QUẢN LÝ ĐƠN HÀNG ---
@@ -717,16 +711,18 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Tạo Payment
+                // 1. Tạo Payment (Giữ nguyên)
+                // Lưu ý: Cú pháp Interpolated bên dưới cần sửa lại chuỗi cho đúng chuẩn C#
                 await context.Database.ExecuteSqlInterpolatedAsync(
-                    $"CALL proc_create_payment({bookingId}, {total}, {"Thành công"}, {""}, {method})");
+                    $"CALL proc_create_payment({bookingId}, {total}, 'Thành công', '', {method})");
 
-                // Tạo Tickets
+                // 2. Tạo Tickets (ĐÃ SỬA)
                 foreach (var seatId in seatIds)
                 {
-                    string code = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+                    // Không cần generate code ở C# nữa
+                    // Gọi SP chỉ với 2 tham số: bookingId và seatId
                     await context.Database.ExecuteSqlInterpolatedAsync(
-                        $"CALL proc_create_ticket({bookingId}, {seatId}, {code})");
+                        $"CALL proc_create_ticket({bookingId}, {seatId})");
                 }
             }
         }

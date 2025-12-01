@@ -1,0 +1,162 @@
+﻿<UserControl x:Class="StageX_DesktopApp.Views.TicketScanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:StageX_DesktopApp.ViewModels"
+             mc:Ignorable="d"
+             Background="#FF1A1A1A" Foreground="White"
+             d:DesignHeight="768" d:DesignWidth="1366">
+
+    <UserControl.DataContext>
+        <vm:TicketScanViewModel />
+    </UserControl.DataContext>
+
+    <!-- Style cho DataGrid giống BookingManagement -->
+    <UserControl.Resources>
+
+        <!-- Style nút Quét -->
+        <Style x:Key="ButtonScanStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FF0D6EFD"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="5" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Style header giống mẫu -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="Black"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <!-- Style TextBox giống mẫu -->
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Background" Value="#EAEAEA"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- TITLE -->
+        <TextBlock Grid.Row="0" Text="QUẢN LÝ VÉ" 
+                   FontSize="24" 
+                   FontWeight="Bold" 
+                   Foreground="#FFffc107"
+                   Margin="0,0,0,20"/>
+
+        <!-- SEARCH BAR -->
+        <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="20" Margin="0,0,0,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                    <TextBlock Text="Mã vé:" Foreground="Gray" Margin="0,0,0,5"/>
+                    <TextBox Width="300"
+                             Text="{Binding TicketCode, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding ScanCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </StackPanel>
+
+                <Button Grid.Column="1" Content="🔍 Quét" 
+                        Style="{StaticResource ButtonScanStyle}" 
+                        VerticalAlignment="Bottom"
+                        Command="{Binding ScanCommand}"/>
+            </Grid>
+        </Border>
+
+        <!-- DATA GRID -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding UsedTickets}"
+                  IsReadOnly="True"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  Background="Transparent"
+                  RowBackground="#FF1E1E1E"
+                  AlternatingRowBackground="#FF252525"
+                  HeadersVisibility="Column"
+                  Foreground="White"
+                  BorderThickness="0"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="#333"
+                  RowHeight="35">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="THỜI GIAN"
+                                    Binding="{Binding UpdatedAt, StringFormat='dd/MM/yyyy HH:mm:ss'}"
+                                    Width="200"
+                                    FontWeight="Bold"/>
+
+                <DataGridTextColumn Header="MÃ VÉ"
+                                    Binding="{Binding TicketCode}"
+                                    Width="1.5*"/>
+
+                <DataGridTemplateColumn Header="TRẠNG THÁI" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Status}" 
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Style.Triggers>
+
+                                            <DataTrigger Binding="{Binding Status}" Value="Đã sử dụng">
+                                                <Setter Property="Foreground" Value="#FF198754"/>
+                                                <!-- Green -->
+                                            </DataTrigger>
+
+                                            <DataTrigger Binding="{Binding Status}" Value="Hợp lệ">
+                                                <Setter Property="Foreground" Value="#FFffc107"/>
+                                                <!-- Yellow -->
+                                            </DataTrigger>
+
+                                            <DataTrigger Binding="{Binding Status}" Value="Không hợp lệ">
+                                                <Setter Property="Foreground" Value="#FFDC3545"/>
+                                                <!-- Red -->
+                                            </DataTrigger>
+
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

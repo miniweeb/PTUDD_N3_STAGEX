@@ -11,7 +11,6 @@
         WindowStartupLocation="CenterScreen" 
         ResizeMode="CanResize"
         Background="#FF1A1A1A" Foreground="White">
-
     <Window.DataContext>
         <vm:LoginViewModel />
     </Window.DataContext>
@@ -19,18 +18,20 @@
     <StackPanel Margin="30">
         <TextBlock Text="ĐĂNG NHẬP HỆ THỐNG" FontSize="22" FontWeight="Bold" Foreground="#FFffc107" HorizontalAlignment="Center" Margin="0,10,0,30"/>
 
-        <TextBlock Text="Email / Tên đăng nhập:" Margin="0,0,0,5"/>
+        <TextBlock Text="Email / Tên đăng nhập:" Margin="0,0,0,5" Foreground="Gray"/>
         <TextBox Text="{Binding Identifier, UpdateSourceTrigger=PropertyChanged}" 
-                 Padding="10" FontSize="14"/>
-
-        <TextBlock Text="Mật khẩu:" Margin="0,15,0,5"/>
-        <PasswordBox x:Name="PasswordBox" Padding="10" FontSize="14"/>
-
+                 Style="{StaticResource InputStyle}"/>
+        <TextBlock Text="Mật khẩu:" Margin="0,15,0,5" Foreground="Gray"/>
+        <PasswordBox x:Name="PasswordBox"
+                     Style="{StaticResource InputStyle}"/>
         <Button Content="Đăng nhập" 
-                Margin="0,30,0,0" Padding="15" FontSize="16" FontWeight="Bold" Background="#FFffc107" Foreground="Black"
+                Margin="0,30,0,0"
+                Style="{StaticResource ButtonSpecialStyle}" 
+                Height="45" FontSize="16" 
                 Command="{Binding LoginCommand}"
                 CommandParameter="{Binding ElementName=PasswordBox}"
-                IsEnabled="{Binding IsNotLoading}" IsDefault="True"/>
+                IsEnabled="{Binding IsNotLoading}"
+                IsDefault="True"/>
 
         <TextBlock Text="{Binding ErrorMessage}" 
                    Margin="0,15,0,0" 

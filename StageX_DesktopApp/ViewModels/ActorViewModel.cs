@@ -20,8 +20,11 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private int _id;
         [ObservableProperty] private string _fullName;
         [ObservableProperty] private string _nickName;
-        [ObservableProperty] private string _avatarUrl;
+        [ObservableProperty] private string _email;     // Mới
+        [ObservableProperty] private string _phone;     // Mới
+        [ObservableProperty] private DateTime? _dateOfBirth; // Mới
         [ObservableProperty] private int _statusIndex = 0; // 0: Hoạt động, 1: Ngừng
+        [ObservableProperty] private int _genderIndex = 0;
         [ObservableProperty] private string _saveButtonContent = "Lưu Diễn viên";
 
         public ActorViewModel()
@@ -43,8 +46,14 @@ namespace StageX_DesktopApp.ViewModels
             Id = actor.ActorId;
             FullName = actor.FullName;
             NickName = actor.NickName;
-            AvatarUrl = actor.AvatarUrl;
+            DateOfBirth = actor.DateOfBirth;
             StatusIndex = (actor.Status == "Ngừng hoạt động") ? 1 : 0;
+            GenderIndex = actor.Gender switch
+            {
+                "Nữ" => 1,
+                "Khác" => 2,
+                _ => 0
+            };
             SaveButtonContent = "Cập nhật";
         }
 
@@ -53,9 +62,8 @@ namespace StageX_DesktopApp.ViewModels
         {
             Id = 0;
             FullName = "";
-            NickName = "";
-            AvatarUrl = "";
-            StatusIndex = 0;
+            NickName = ""; DateOfBirth = null;
+            StatusIndex = 0; GenderIndex = 0;
             SaveButtonContent = "Lưu Diễn viên";
         }
 
@@ -67,14 +75,18 @@ namespace StageX_DesktopApp.ViewModels
                 MessageBox.Show("Vui lòng nhập tên!");
                 return;
             }
-
+            string genderStr = GenderIndex switch { 1 => "Nữ", 2 => "Khác", _ => "Nam" };
+            string statusStr = StatusIndex == 1 ? "Ngừng hoạt động" : "Hoạt động";
             var actor = new Actor
             {
                 ActorId = Id,
                 FullName = FullName,
                 NickName = NickName,
-                AvatarUrl = AvatarUrl,
-                Status = StatusIndex == 1 ? "Ngừng hoạt động" : "Hoạt động"
+                DateOfBirth = DateOfBirth,
+                Gender = genderStr,
+                Email = Email,
+                Phone = Phone,
+                Status = statusStr
             };
 
             try
@@ -100,6 +112,7 @@ namespace StageX_DesktopApp.ViewModels
                 {
                     await _dbService.DeleteActorAsync(actor.ActorId);
                     await LoadActors();
+                    MessageBox.Show("Đã xóa tài khoản thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch
                 {

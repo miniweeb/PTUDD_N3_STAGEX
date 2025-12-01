@@ -13,6 +13,7 @@ namespace StageX_DesktopApp
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         }
         protected override void OnStartup(StartupEventArgs e)
+
         {
             base.OnStartup(e);
 

@@ -19,7 +19,6 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty]
         private string _identifier = "admin@example.com"; // Giá trị mặc định như code cũ
 
-
         [ObservableProperty]
         private string _errorMessage;
 
@@ -42,10 +41,21 @@ namespace StageX_DesktopApp.ViewModels
             var passwordBox = parameter as PasswordBox;
             string password = passwordBox?.Password;
 
-            // Bắt đầu xử lý
-            IsLoading = true;
-            ErrorMessage = "Đang kiểm tra..."; // Logic cũ
+            // Nếu chưa nhập tên đăng nhập -> Báo lỗi và THOÁT NGAY
+            if (string.IsNullOrWhiteSpace(Identifier))
+            {
+                ErrorMessage = "Vui lòng nhập Email hoặc Tên đăng nhập!";
+                return; // Thoát ra, IsLoading vẫn là false -> Nút vẫn nhấn được
+            }
 
+            // Nếu chưa nhập mật khẩu -> Báo lỗi và THOÁT NGAY
+            if (string.IsNullOrEmpty(password))
+            {
+                ErrorMessage = "Vui lòng nhập Mật khẩu!";
+                return; // Thoát ra, IsLoading vẫn là false -> Nút vẫn nhấn được
+            }
+            IsLoading = true; // <--- Đặt dòng này ở đây mới đúng
+            ErrorMessage = "Đang kiểm tra...";
             try
             {
                 // 1. Gọi Service tìm User
@@ -55,7 +65,7 @@ namespace StageX_DesktopApp.ViewModels
                 if (user == null)
                 {
                     ErrorMessage = "Tài khoản không tồn tại.";
-                    // Ghi chú: SoundManager.PlayError(); (Nếu bạn có file này thì bỏ comment ra)
+                    SoundManager.PlayError();
                     IsLoading = false;
                     return;
                 }
@@ -64,6 +74,8 @@ namespace StageX_DesktopApp.ViewModels
                 if (user.Status != null && user.Status.Equals("khóa", StringComparison.OrdinalIgnoreCase))
                 {
                     ErrorMessage = "Tài khoản đã bị khóa";
+                    passwordBox?.Clear();
+                    SoundManager.PlayError();
                     IsLoading = false;
                     return;
                 }
@@ -73,16 +85,8 @@ namespace StageX_DesktopApp.ViewModels
                 if (!isPasswordCorrect)
                 {
                     ErrorMessage = "Mật khẩu không đúng.";
+                    passwordBox?.Clear();
                     SoundManager.PlayError(); 
-                    IsLoading = false;
-                    return;
-                }
-
-                // 5. Kiểm tra quyền (Role)
-                if (user.Role != "Nhân viên" && user.Role != "Admin")
-                {
-                    SoundManager.PlayError();
-                    ErrorMessage = "Bạn không có quyền truy cập.";
                     IsLoading = false;
                     return;
                 }
@@ -90,7 +94,7 @@ namespace StageX_DesktopApp.ViewModels
                 // 6. Đăng nhập thành công
                 AuthSession.Login(user);
                 SoundManager.PlaySuccess();
-
+                passwordBox?.Clear();
                 // Mở MainWindow và đóng Login
                 // Trong MVVM thuần túy thường dùng NavigationService, nhưng đây là cách đơn giản nhất để giữ code cũ
                 MainWindow mainWindow = new MainWindow();

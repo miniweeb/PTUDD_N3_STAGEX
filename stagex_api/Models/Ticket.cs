@@ -1,9 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace StageX_DesktopApp.Models
+namespace Stagex.Api.Models
 {
-    [Table("tickets")] // Ánh xạ đúng tên bảng "tickets"
+    [Table("tickets")]
     public class Ticket
     {
         [Key]
@@ -20,15 +20,16 @@ namespace StageX_DesktopApp.Models
         public long TicketCode { get; set; }
 
         [Column("status")]
-        public string Status { get; set; }
+        public string Status { get; set; } = string.Empty;
 
+        // Dấu thời gian khi vé được tạo trong cơ sở dữ liệu. Dấu thời gian này sẽ ánh xạ
+        // trực tiếp đến cột "created_at" trong bảng vé.
         [Column("created_at")]
         public DateTime? CreatedAt { get; set; }
 
+        // Dấu thời gian khi vé được cập nhật lần cuối. Dấu thời gian này được
+        // thiết lập bất cứ khi nào trạng thái vé thay đổi 
         [Column("updated_at")]
         public DateTime? UpdatedAt { get; set; }
-
-        public virtual Booking Booking { get; set; }
-        public virtual Seat Seat { get; set; }
     }
 }

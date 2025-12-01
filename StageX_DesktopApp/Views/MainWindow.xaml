@@ -72,7 +72,7 @@
                             Foreground="{Binding SelectedMenu, Converter={StaticResource FgConverter}, ConverterParameter='Show'}"
                             FontWeight="{Binding SelectedMenu, Converter={StaticResource FontConverter}, ConverterParameter='Show'}"/>
 
-                    <Button Content="Quản lý Sơ đồ rạp &amp; Hạng ghế" Command="{Binding NavigateTheaterCommand}" Style="{StaticResource MenuBtnStyle}"
+                    <Button Content="Quản lý Rạp &amp; Ghế" Command="{Binding NavigateTheaterCommand}" Style="{StaticResource MenuBtnStyle}"
                             Background="{Binding SelectedMenu, Converter={StaticResource BgConverter}, ConverterParameter='Theater'}"
                             Foreground="{Binding SelectedMenu, Converter={StaticResource FgConverter}, ConverterParameter='Theater'}"
                             FontWeight="{Binding SelectedMenu, Converter={StaticResource FontConverter}, ConverterParameter='Theater'}"/>
@@ -103,6 +103,11 @@
                             Background="{Binding SelectedMenu, Converter={StaticResource BgConverter}, ConverterParameter='Booking'}"
                             Foreground="{Binding SelectedMenu, Converter={StaticResource FgConverter}, ConverterParameter='Booking'}"
                             FontWeight="{Binding SelectedMenu, Converter={StaticResource FontConverter}, ConverterParameter='Booking'}"/>
+                    
+                    <Button Content="Quản lý vé" Command="{Binding NavigateTicketScanCommand}" Style="{StaticResource MenuBtnStyle}"
+                            Background="{Binding SelectedMenu, Converter={StaticResource BgConverter}, ConverterParameter='TicketScan'}"
+                            Foreground="{Binding SelectedMenu, Converter={StaticResource FgConverter}, ConverterParameter='TicketScan'}"
+                            FontWeight="{Binding SelectedMenu, Converter={StaticResource FontConverter}, ConverterParameter='TicketScan'}"/>
                 </StackPanel>
 
                 <Separator Background="#333" Margin="10,20"/>

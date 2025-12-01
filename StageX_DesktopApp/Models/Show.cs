@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StageX_DesktopApp.Models
 {
-    [Table("shows")]
+    [Table("shows")] // Ánh xạ tới bảng 'shows'
     public class Show
     {
         [Key]
@@ -12,31 +12,29 @@ namespace StageX_DesktopApp.Models
         public int ShowId { get; set; }
 
         [Column("title")]
-        public string Title { get; set; } // Tiêu đề bắt buộc (NOT NULL trong DB) nên giữ nguyên
+        public string Title { get; set; }
 
         [Column("description")]
-        public string? Description { get; set; } // <--- Thêm dấu ? (Cho phép Null)
+        public string Description { get; set; }
 
         [Column("duration_minutes")]
         public int DurationMinutes { get; set; }
 
         [Column("director")]
-        public string? Director { get; set; } // <--- Thêm dấu ? (Cho phép Null)
+        public string Director { get; set; }
 
         [Column("poster_image_url")]
-        public string? PosterImageUrl { get; set; } // <--- Thêm dấu ? (Cho phép Null)
+        public string PosterImageUrl { get; set; }
 
         [Column("status")]
         public string Status { get; set; }
 
+        // Ghi chú: Dùng để hiển thị (không có trong CSDL)
         [NotMapped]
         public string GenresDisplay { get; set; }
 
         [NotMapped]
         public string ActorsDisplay { get; set; }
-
-        [NotMapped]
-        public bool CanDelete { get; set; } = true;
 
         // Ghi chú: Mối quan hệ Nhiều-Nhiều
         public virtual ICollection<Actor> Actors { get; set; } = new List<Actor>();

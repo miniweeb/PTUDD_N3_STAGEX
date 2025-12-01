@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:StageX_DesktopApp.ViewModels"
+             xmlns:util="clr-namespace:StageX_DesktopApp.Utilities"
              mc:Ignorable="d"
              Background="#FF1A1A1A" Foreground="White"
              d:DesignHeight="768" d:DesignWidth="1366">
@@ -11,221 +12,222 @@
     <UserControl.DataContext>
         <vm:ShowViewModel />
     </UserControl.DataContext>
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <TextBlock Grid.Row="0" Text="QUẢN LÝ VỞ DIỄN" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,15"/>
 
-        <Style x:Key="ButtonAddStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF198754"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
+        <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <Style x:Key="ButtonEditStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF0D6EFD"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,3"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <Style x:Key="ButtonDeleteStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFDC3545"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,3"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <Style x:Key="ButtonNormalStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF6C757D"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="6"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CaretBrush" Value="White"/>
-        </Style>
-
-        <Style TargetType="ListBox">
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-    </UserControl.Resources>
-
-    <Grid Margin="15">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1.5*"/>
-            <ColumnDefinition Width="5"/>
-            <ColumnDefinition Width="2*"/>
-        </Grid.ColumnDefinitions>
-
-        <Border Grid.Column="0" Background="#FF0C1220" CornerRadius="5" Padding="15">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <TextBlock Text="QUẢN LÝ VỞ DIỄN" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,10"/>
-
-                    <TextBlock Text="Tiêu đề:" Margin="0,10,0,5" Foreground="Gray"/>
-                    <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"/>
-
-                    <TextBlock Text="Đạo diễn:" Margin="0,10,0,5" Foreground="Gray"/>
-                    <TextBox Text="{Binding Director}"/>
-
-                    <TextBlock Text="Thời lượng (phút):" Margin="0,10,0,5" Foreground="Gray"/>
-                    <TextBox Text="{Binding Duration}"/>
-
-                    <TextBlock Text="Link Poster:" Margin="0,10,0,5" Foreground="Gray"/>
-                    <TextBox Text="{Binding PosterUrl}"/>
-
-                    <TextBlock Text="Thể loại (Check để chọn):" Margin="0,10,0,5" Foreground="Gray"/>
-                    <ListBox ItemsSource="{Binding GenresList}" Height="120">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Foreground="White"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <TextBlock Text="Diễn viên (Check để chọn):" Margin="0,15,0,5" Foreground="Gray"/>
-                    <ListBox ItemsSource="{Binding ActorsList}" Height="120">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Foreground="White"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <TextBlock Text="Mô tả:" Margin="0,10,0,5" Foreground="Gray"/>
-                    <TextBox Text="{Binding Description}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                        <Button Content="{Binding SaveBtnContent}" 
-            Command="{Binding SaveCommand}" 
-            Style="{StaticResource ButtonAddStyle}"
-            MinWidth="120"/>
-
-                        <Button Content="Làm mới" 
-            Command="{Binding ClearCommand}" 
-            Style="{StaticResource ButtonNormalStyle}" 
-            Margin="10,0,0,0"/>
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-
-        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#FF27324A"/>
-
-        <Grid Grid.Column="2" Margin="10,0,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <Border Grid.Row="0" Background="#FF0C1220" CornerRadius="5" Padding="15" Margin="0,0,0,10">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="0,0,0,15">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="1.5*"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Tra cứu theo tên:" Margin="0,0,10,5" Foreground="Gray"/>
-                    <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0">
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Tiêu đề:" Foreground="Gray" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Height="32"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Đạo diễn:" Foreground="Gray" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding Director}" Style="{StaticResource InputStyle}" Height="32"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Thời lượng (phút):" Foreground="Gray" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding Duration}" 
+                                 util:TextBoxHelper.IsNumeric="True"
+                                 Style="{StaticResource InputStyle}" Height="32"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="6">
+                        <TextBlock Text="Link Poster:" Foreground="Gray" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding PosterUrl}" Style="{StaticResource InputStyle}" Height="32"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Mô tả nội dung:" Foreground="Gray" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding Description}" 
+                                 Style="{StaticResource InputStyle}"
+                                 Height="110" 
+                                 TextWrapping="Wrap" 
+                                 AcceptsReturn="True" 
+                                 VerticalScrollBarVisibility="Auto"
+                                 VerticalContentAlignment="Top"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Thể loại (Chọn nhiều):" Foreground="Gray" Margin="0,0,0,5"/>
+                        <ListBox ItemsSource="{Binding GenresList}" Height="110" SelectionMode="Multiple">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Foreground="black"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Diễn viên (Chọn nhiều):" Foreground="Gray" Margin="0,0,0,5"/>
+                        <ListBox ItemsSource="{Binding ActorsList}" Height="110" SelectionMode="Multiple">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Foreground="black"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                    <Button Content="{Binding SaveBtnContent}" Command="{Binding SaveCommand}" Style="{StaticResource ButtonAddStyle}" Width="150" Height="32"/>
+                    <Button Content="Hủy" Command="{Binding ClearCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="120"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Background="#FF0C1220" Padding="10" Margin="0,0,0,10" CornerRadius="5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Tra cứu theo tên vở diễn:" Foreground="Gray" Margin="0,0,0,5" FontSize="12"/>
+                    <TextBox Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Height="32">
                         <TextBox.InputBindings>
                             <KeyBinding Key="Enter" Command="{Binding LoadShowsCommand}"/>
                         </TextBox.InputBindings>
                     </TextBox>
+                </StackPanel>
 
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Lọc theo thể loại:" Margin="0,0,10,5" Foreground="Gray"/>
-                    <ComboBox Grid.Row="1" Grid.Column="1" 
-                              ItemsSource="{Binding FilterGenres}" 
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Lọc theo thể loại:" Foreground="Gray" Margin="0,0,0,5" />
+                    <ComboBox ItemsSource="{Binding FilterGenres}" 
                               SelectedItem="{Binding SelectedFilterGenre}" 
-                              DisplayMemberPath="GenreName" 
-                              Padding="6" Margin="0,0,10,0"/>
+                              DisplayMemberPath="GenreName"
+                              Padding="10,0" Height="32" RenderTransformOrigin="0.499,0.624" Width="194"/>
+                </StackPanel>
 
-                    <Button Grid.Row="1" Grid.Column="2" Content="Lọc" Command="{Binding LoadShowsCommand}" 
-                            Style="{StaticResource ButtonEditStyle}" Padding="15,6" FontWeight="Bold"/>
-                </Grid>
-            </Border>
+                <StackPanel Grid.Column="4" VerticalAlignment="Bottom">
+                    <Button Content="Lọc" Command="{Binding LoadShowsCommand}" Style="{StaticResource ButtonEditStyle}" Width="80" Height="32" RenderTransformOrigin="0.5,0.5">
+                        <Button.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform/>
+                                <SkewTransform AngleX="0"/>
+                                <RotateTransform/>
+                                <TranslateTransform X="0"/>
+                            </TransformGroup>
+                        </Button.RenderTransform>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
-            <TextBlock Grid.Row="1" Text="DANH SÁCH VỞ DIỄN" FontSize="16" FontWeight="SemiBold" Margin="0,10,0,10"/>
+        <TextBlock Grid.Row="3" Text="DANH SÁCH VỞ DIỄN" FontSize="16" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,10"/>
 
-            <DataGrid Grid.Row="2" ItemsSource="{Binding Shows}" AutoGenerateColumns="False" IsReadOnly="True"
-                      Background="Transparent" RowBackground="Transparent" Foreground="White" BorderThickness="0"
-                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" RowHeaderWidth="0"
-                      HeadersVisibility="Column">
+        <DataGrid Grid.Row="4" ItemsSource="{Binding Shows}" 
+                AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+      Foreground="White" BorderThickness="0"
+      GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
+      RowHeaderWidth="0" RowHeight="30" Background="Transparent" RowBackground="Transparent">
+<DataGrid.ColumnHeaderStyle>
+    <Style TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="Black"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Padding" Value="10,12"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+</DataGrid.ColumnHeaderStyle>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="TIÊU ĐỀ" Binding="{Binding Title}" Width="1.5*" 
+                            ElementStyle="{StaticResource LeftCell}"/>
 
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="TIÊU ĐỀ" Binding="{Binding Title}" Width="1.5*"/>
-                    <DataGridTextColumn Header="ĐẠO DIỄN" Binding="{Binding Director}" Width="*"/>
-                    <DataGridTextColumn Header="THỜI LƯỢNG" Binding="{Binding DurationMinutes}" Width="Auto"/>
-                    <DataGridTextColumn Header="THỂ LOẠI" Binding="{Binding GenresDisplay}" Width="*"/>
-                    <DataGridTextColumn Header="DIỄN VIÊN" Binding="{Binding ActorsDisplay}" Width="1.5*"/>
+                <DataGridTextColumn Header="ĐẠO DIỄN" Binding="{Binding Director}" Width="*" 
+                            ElementStyle="{StaticResource LeftCell}"/>
 
-                    <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="Auto">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
+                <DataGridTextColumn Header="THỜI LƯỢNG" Binding="{Binding DurationMinutes, StringFormat={}{0} phút}" Width="110" 
+                            ElementStyle="{StaticResource CenterCell}"/>
 
-                                    <Button Content="Sửa" 
-                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                        CommandParameter="{Binding}"
-                        Margin="0,0,5,0">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource ButtonEditStyle}">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
+                <DataGridTemplateColumn Header="THỂ LOẠI" Width="1.2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding GenresDisplay}" 
+                               TextTrimming="CharacterEllipsis" 
+                               ToolTip="{Binding GenresDisplay}"
+                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                               Margin="5,0"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
-                                    <Button Content="Xóa" 
-                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                        CommandParameter="{Binding}">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource ButtonDeleteStyle}">
-                                                <Setter Property="Visibility" Value="Visible"/>
+                <DataGridTemplateColumn Header="DIỄN VIÊN" Width="1.5*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding ActorsDisplay}" 
+                               TextTrimming="CharacterEllipsis" 
+                               ToolTip="{Binding ActorsDisplay}"
+                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                               Margin="5,0"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding CanDelete}" Value="False">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
+                <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <UniformGrid Rows="1" HorizontalAlignment="Center" Width="140">
 
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Grid>
+                                <Button Content="Sửa" Style="{StaticResource ButtonEditStyle}"
+                                Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                CommandParameter="{Binding}"
+                                Height="28" Padding="0" Margin="0,0,3,0"/>
+
+                                <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}"
+                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                CommandParameter="{Binding}"
+                                Height="28" Padding="0" Margin="3,0,0,0"/>
+                            </UniformGrid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </UserControl>

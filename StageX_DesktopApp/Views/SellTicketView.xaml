@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:util="clr-namespace:StageX_DesktopApp.Utilities"
              xmlns:vm="clr-namespace:StageX_DesktopApp.ViewModels"
              mc:Ignorable="d"
              Background="#FF1A1A1A" Foreground="White"
@@ -12,156 +13,251 @@
         <vm:SellTicketViewModel />
     </UserControl.DataContext>
 
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-    </UserControl.Resources>
-
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3*" />
-            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="1.8*" />
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
 
-        <Border Grid.Column="0" Grid.Row="0" Background="#FF0C1220" CornerRadius="8" Padding="10" Margin="5">
-            <StackPanel>
-                <TextBlock Text="1. VỞ DIỄN &amp; SUẤT CHIẾU" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" />
+        <Grid Grid.Column="0" Margin="0,0,10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="2.5*" />
+                <RowDefinition Height="1.5*" />
+            </Grid.RowDefinitions>
 
-                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                    <RadioButton Content="Mặc định" GroupName="SellMode" Foreground="White" Margin="0,0,10,0" IsChecked="True"
-                                 Command="{Binding SwitchModeCommand}" CommandParameter="Normal"/>
-                    <RadioButton Content="Giờ cao điểm" GroupName="SellMode" Foreground="White"
-                                 Command="{Binding SwitchModeCommand}" CommandParameter="Peak"/>
-                </StackPanel>
+            <Border Grid.Row="0" Background="#FF0C1220" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="1. VỞ DIỄN &amp; SUẤT CHIẾU" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" />
 
-                <Grid Margin="0,10,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPeakMode}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Vở diễn:" VerticalAlignment="Center" Margin="0,0,5,0" />
-                            <ComboBox Width="220" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" DisplayMemberPath="title" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="15,0,0,0">
-                            <TextBlock Text="Suất chiếu:" VerticalAlignment="Center" Margin="0,0,5,0" />
-                            <ComboBox Width="250" ItemsSource="{Binding Performances}" SelectedItem="{Binding SelectedPerformance}" DisplayMemberPath="Display" />
-                        </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <RadioButton Content="Mặc định" GroupName="SellMode" Foreground="White" Margin="0,0,10,0" IsChecked="True"
+                                     Command="{Binding SwitchModeCommand}" CommandParameter="Normal"/>
+                        <RadioButton Content="Giờ cao điểm" GroupName="SellMode" Foreground="White"
+                                     Command="{Binding SwitchModeCommand}" CommandParameter="Peak"/>
                     </StackPanel>
 
-                    <ItemsControl ItemsSource="{Binding TopPerformances}">
-                        <ItemsControl.Style>
-                            <Style TargetType="ItemsControl">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPeakMode}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ItemsControl.Style>
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="3" Rows="1"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Content="{Binding Display}" Margin="5,0" Height="40"
-                                        Background="#FF2196F3" Foreground="White" BorderBrush="#FFFFC107" BorderThickness="1"
-                                        Command="{Binding DataContext.SelectPeakPerformanceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}">
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding performance_id}" Value="0">
-                                                    <Setter Property="Visibility" Value="Hidden"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsSoldOut}" Value="True">
-                                                    <Setter Property="Background" Value="Gray"/>
-                                                    <Setter Property="IsEnabled" Value="False"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Grid>
-            </StackPanel>
-        </Border>
+                    <Grid Margin="0,10,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPeakMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
 
-        <Border Grid.Column="0" Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="10" Margin="5">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                
-                <StackPanel Grid.Row="0">
-                    <TextBlock Text="2. SƠ ĐỒ GHẾ" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" Margin="0,0,0,10"/>
-                    <ItemsControl ItemsSource="{Binding LegendItems}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,15,5" VerticalAlignment="Center">
-                                    <Border Width="20" Height="20" Background="{Binding Color}" CornerRadius="4" BorderBrush="White" BorderThickness="1" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Vở diễn:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="WHITE"/>
+                                <ComboBox Width="220" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" DisplayMemberPath="title" Style="{StaticResource InputStyle}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="15,0,0,0">
+                                <TextBlock Text="Suất chiếu:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="wHITE"/>
+                                <ComboBox Width="250" ItemsSource="{Binding Performances}" SelectedItem="{Binding SelectedPerformance}" DisplayMemberPath="Display" Style="{StaticResource InputStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Background="Transparent">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPeakMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+
+                            <ItemsControl ItemsSource="{Binding TopPerformances}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="3" Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding Data.Display}" 
+                    Margin="5,0" Height="45"
+                    Background="#FF2196F3" Foreground="White"
+                    Command="{Binding DataContext.SelectPeakPerformanceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                    CommandParameter="{Binding}">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource ButtonBaseStyle}">
+                                                    <Setter Property="BorderThickness" Value="0"/>
+
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}" 
+                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                            BorderThickness="{TemplateBinding BorderThickness}" 
+                                            CornerRadius="4">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                                                </Border>
+
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Opacity" Value="0.8"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="#FFFFC107"/>
+                                                            <Setter Property="BorderThickness" Value="3"/>
+                                                        </DataTrigger>
+
+                                                        <DataTrigger Binding="{Binding Data.performance_id}" Value="0">
+                                                            <Setter Property="Visibility" Value="Hidden"/>
+                                                        </DataTrigger>
+
+                                                        <DataTrigger Binding="{Binding Data.IsSoldOut}" Value="True">
+                                                            <Setter Property="Background" Value="Gray"/>
+                                                            <Setter Property="IsEnabled" Value="False"/>
+                                                            <Setter Property="ToolTip" Value="Đã hết vé"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </Grid>
                 </StackPanel>
+            </Border>
 
-                <ScrollViewer Grid.Row="1" Margin="0,10,0,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
-                              PreviewMouseWheel="SeatScrollViewer_PreviewMouseWheel">
-                    <Grid x:Name="SeatMapGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" />
-                </ScrollViewer>
-            </Grid>
-        </Border>
+            <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-        <Border Grid.Column="0" Grid.Row="4" Background="#FF0C1220" CornerRadius="8" Padding="10" Margin="5">
-            <StackPanel>
-                <TextBlock Text="3. THÔNG TIN CHI TIẾT" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" />
-                <TextBlock Text="{Binding SelectedShowText}" FontSize="14" FontWeight="SemiBold" Margin="0,5,0,0" />
-                <TextBlock Text="{Binding SelectedPerfText}" FontSize="14" Margin="0,0,0,5" />
-                
-                <DataGrid ItemsSource="{Binding BillSeats}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" 
-                          Height="120" Background="Transparent" RowBackground="Transparent" Foreground="White" BorderThickness="0"
-                          GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" RowHeaderWidth="0">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="GHẾ" Binding="{Binding SeatLabel}" Width="*" />
-                        <DataGridTextColumn Header="ĐƠN GIÁ" Binding="{Binding Price, StringFormat='N0'}" Width="*" />
-                    </DataGrid.Columns>
-                </DataGrid>
-                <TextBlock Text="{Binding TotalText}" FontSize="14" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,5,0,5" />
-            </StackPanel>
-        </Border>
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="2. SƠ ĐỒ GHẾ" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" Margin="0,0,0,10"/>
+                        <ItemsControl ItemsSource="{Binding LegendItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,15,5" VerticalAlignment="Center">
+                                        <Border Width="18" Height="18" Background="{Binding Color}" CornerRadius="3" BorderBrush="White" BorderThickness="1" Margin="0,0,5,0"/>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="13"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
 
-        <Border Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Background="#FF0C1220" CornerRadius="8" Padding="10" Margin="5">
+                    <Viewbox Grid.Row="1" Margin="0,10,0,0" Stretch="Uniform">
+                        <ItemsControl ItemsSource="{Binding SeatMap}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" MinHeight="{Binding RowHeight}">
+                                        <TextBlock Text="{Binding RowName}" Width="30" VerticalAlignment="Center" FontWeight="Bold" Foreground="Gray" TextAlignment="Right" Margin="0,0,10,0"/>
+                                        <ItemsControl ItemsSource="{Binding Items}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding DisplayText}" Command="{Binding SelectCommand}"
+                                                            Width="45" Height="40" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold"
+                                                            Background="{Binding BackgroundColor}" Foreground="White" Cursor="Hand">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                        <Setter TargetName="bd" Property="BorderBrush" Value="#FFFFC107"/>
+                                                                        <Setter TargetName="bd" Property="BorderThickness" Value="3"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsSelected}" Value="False">
+                                                                        <Setter TargetName="bd" Property="BorderBrush" Value="Gray"/>
+                                                                        <Setter TargetName="bd" Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Data.IsSold}" Value="True">
+                                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                                        <Setter Property="Opacity" Value="0.5"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Hidden"/>
+                                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                                        <Setter Property="Width" Value="45"/>
+                                                                    </DataTrigger>
+                                                                    <Trigger Property="IsEnabled" Value="True">
+                                                                        <Setter Property="ToolTip" Value="{Binding TooltipText}"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Viewbox>
+                </Grid>
+            </Border>
+            <Border Grid.Row="2" Background="#FF0C1220" CornerRadius="8" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="3. THÔNG TIN CHI TIẾT" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" />
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding BillSeats}" 
+                  AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" 
+                  Background="Transparent" RowBackground="Transparent" Foreground="White" BorderThickness="0"
+                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" RowHeaderWidth="0"
+                  VerticalScrollBarVisibility="Auto" MaxHeight="150">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="GHẾ" Binding="{Binding SeatLabel}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
+                            <DataGridTextColumn Header="ĐƠN GIÁ" Binding="{Binding Price, StringFormat='N0'}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Grid.Row="2" Text="{Binding TotalText}" 
+                   FontSize="18" FontWeight="Bold" Foreground="#FF198754" 
+                   HorizontalAlignment="Right" Margin="0,10,0,5" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Column="1" Background="#FF0C1220" CornerRadius="8" Padding="10">
             <StackPanel>
                 <TextBlock Text="4. THANH TOÁN" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" Margin="0,0,0,15"/>
+
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                     <Button Content="Tiền mặt" Command="{Binding SelectPaymentCommand}" CommandParameter="Cash" Padding="10,5" Margin="0,0,10,0" Background="#FF0C1220" Foreground="#FFFFC107" BorderBrush="#FFFFC107" BorderThickness="1">
                         <Button.Style>
@@ -189,41 +285,24 @@
                     </Button>
                 </StackPanel>
 
-                <StackPanel Margin="0,5,0,0">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsCashPayment}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-                    <TextBlock Text="Khách đưa:" Margin="0,0,0,5" />
-                    <TextBox Text="{Binding CashGiven, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Left" Padding="5"/>
-                    <TextBlock Text="Tiền thừa:" Margin="0,10,0,5" />
-                    <TextBlock Text="{Binding ChangeText}" FontWeight="Bold" FontSize="16" Foreground="#FF198754"/>
+                <StackPanel Margin="0,10,0,0" Visibility="{Binding IsCashPayment, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Khách đưa:" Margin="0,0,0,5" Foreground="Gray"/>
+                    <TextBox Text="{Binding CashGiven, UpdateSourceTrigger=PropertyChanged}" 
+                             Width="150" HorizontalAlignment="Left" Padding="5" Style="{StaticResource InputStyle}"/>
+                    <TextBlock Text="Tiền thừa:" Margin="0,15,0,5" Foreground="Gray"/>
+                    <TextBlock Text="{Binding ChangeText}" FontWeight="Bold" FontSize="24" Foreground="#FF198754"/>
                 </StackPanel>
 
-                <StackPanel Margin="0,5,0,0">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsQrVisible}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-                    <TextBlock Text="Quét QR:" HorizontalAlignment="Center" Margin="0,0,0,5" />
-                    <Border Background="White" CornerRadius="5" Padding="5" Margin="0,10" HorizontalAlignment="Center">
-                        <Image Source="{Binding QrImageSource}" MaxWidth="300" MaxHeight="300" Stretch="Uniform" />
+                <StackPanel Margin="0,10,0,0" Visibility="{Binding IsQrVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Quét mã QR để thanh toán:" HorizontalAlignment="Center" Margin="0,0,0,10" Foreground="Gray"/>
+                    <Border Background="White" CornerRadius="8" Padding="10" HorizontalAlignment="Center">
+                        <Image Source="{Binding QrImageSource}" MaxWidth="250" MaxHeight="250" Stretch="Uniform" />
                     </Border>
                 </StackPanel>
 
-                <Button Content="Lưu" Command="{Binding SaveOrderCommand}" HorizontalAlignment="Right" Padding="10,5" Margin="0,10,0,0" Background="#FF198754" Foreground="White" FontWeight="Bold"/>
+                <Button Content="HOÀN TẤT THANH TOÁN" Command="{Binding SaveOrderCommand}" 
+                        Height="40" FontSize="16" Margin="0,20,0,0" 
+                        Background="#FF198754" Foreground="White" FontWeight="Bold" Style="{StaticResource ButtonBaseStyle}"/>
             </StackPanel>
         </Border>
     </Grid>

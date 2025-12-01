@@ -15,13 +15,7 @@
             <Setter Property="Foreground" Value="Gray"/>
             <Setter Property="Margin" Value="0,15,0,5"/>
         </Style>
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-        </Style>
+
     </UserControl.Resources>
 
     <Grid Margin="25">
@@ -56,25 +50,33 @@
 
             <StackPanel Grid.Column="0">
                 <TextBlock Text="Họ tên"/>
-                <TextBox Text="{Binding FullName}"/>
+                <TextBox Text="{Binding FullName}" Style="{StaticResource InputStyle}"/>
+
                 <TextBlock Text="Địa chỉ (tùy chọn)"/>
-                <TextBox Text="{Binding Address}"/>
+                <TextBox Text="{Binding Address}" Style="{StaticResource InputStyle}"/>
             </StackPanel>
 
             <StackPanel Grid.Column="2">
                 <TextBlock Text="Ngày sinh"/>
-                <DatePicker SelectedDate="{Binding DateOfBirth}" Padding="8" FontSize="14"/>
+                <DatePicker SelectedDate="{Binding DateOfBirth}" Style="{StaticResource InputStyle}"/>
+
                 <TextBlock Text="Số điện thoại (tùy chọn)"/>
-                <TextBox Text="{Binding Phone}"/>
+                <TextBox Text="{Binding Phone}" Style="{StaticResource InputStyle}"/>
             </StackPanel>
         </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,25,0,0">
-            <Button Content="Cập nhật hồ sơ" Command="{Binding SaveInfoCommand}"
-                    Padding="15,10" FontWeight="Bold" Background="#FF198754" Foreground="White" MinWidth="150"/>
 
-            <Button Content="Đặt lại mật khẩu" Command="{Binding ChangePasswordCommand}"
-                    Margin="15,0,0,0" Padding="15,10" FontWeight="Bold" Background="#FFffc107" Foreground="Black" MinWidth="150"/>
+            <Button Content="Cập nhật hồ sơ" 
+                    Command="{Binding SaveInfoCommand}"
+                    Style="{StaticResource ButtonAddStyle}"
+                    MinWidth="150" Height="35"/>
+
+            <Button Content="Đặt lại mật khẩu" 
+                    Command="{Binding ChangePasswordCommand}"
+                    Style="{StaticResource ButtonSpecialStyle}"
+                    Margin="15,0,0,0" MinWidth="150" Height="35"/>
+
         </StackPanel>
     </Grid>
 </UserControl>

@@ -28,15 +28,21 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private Theater _selectedFilterTheater;
         [ObservableProperty] private DateTime? _selectedFilterDate;
         [ObservableProperty] private bool _isDetailEditable = true;
-
+        //Giờ
+        [ObservableProperty] private ObservableCollection<int> _hoursList;
+        [ObservableProperty] private ObservableCollection<int> _minutesList;
+        [ObservableProperty] private int _selectedHour;
+        [ObservableProperty] private int _selectedMinute;
+        [ObservableProperty] private string _endTimeStr = "--:--";
         // Form Fields
         [ObservableProperty] private int _perfId;
         [ObservableProperty] private Show _selectedShow;
         [ObservableProperty] private Theater _selectedTheater;
         [ObservableProperty] private DateTime _perfDate = DateTime.Now;
-        [ObservableProperty] private string _startTimeStr; // Binding text (HH:mm)
         [ObservableProperty] private string _priceStr;     // Binding text
-        [ObservableProperty] private int _statusIndex = 0; // 0: Mở bán, 1: Hủy
+        [ObservableProperty] private ObservableCollection<string> _statusOptions;
+        [ObservableProperty] private string _selectedStatus;
+        [ObservableProperty] private bool _isStatusEnabled;
         [ObservableProperty] private string _saveBtnContent = "Thêm suất diễn";
 
         public PerformanceViewModel()
@@ -54,13 +60,47 @@ namespace StageX_DesktopApp.ViewModels
             var theaters = await _dbService.GetTheatersAsync();
             TheatersList = new ObservableCollection<Theater>(theaters);
 
+            HoursList = new ObservableCollection<int>(Enumerable.Range(0, 24)); 
+            var minutes = new List<int>();
+            for (int i = 0; i < 60; i += 5) minutes.Add(i);
+            MinutesList = new ObservableCollection<int>(minutes);
+
+            // Mặc định chọn 19:00
+            SelectedHour = 19;
+            SelectedMinute = 0;
+            UpdateEndTime();
+
             var filters = theaters.ToList();
             filters.Insert(0, new Theater { TheaterId = 0, Name = "-- Tất cả Rạp --" });
             FilterTheaters = new ObservableCollection<Theater>(filters);
             SelectedFilterTheater = FilterTheaters[0];
 
             await LoadPerformances();
+            ClearForm();
         }
+        private void UpdateEndTime()
+        {
+            if (SelectedShow == null)
+            {
+                EndTimeStr = "--:--";
+                return;
+            }
+
+            // Lấy thời lượng từ Vở diễn (DurationMinutes)
+            int duration = SelectedShow.DurationMinutes;
+
+            // Tạo thời gian bắt đầu giả định (dùng ngày hiện tại để tính toán)
+            DateTime start = DateTime.Today.AddHours(SelectedHour).AddMinutes(SelectedMinute);
+
+            // Cộng thời lượng
+            DateTime end = start.AddMinutes(duration);
+
+            // Cập nhật text hiển thị
+            EndTimeStr = end.ToString("HH:mm");
+        }
+        partial void OnSelectedShowChanged(Show value) => UpdateEndTime();
+        partial void OnSelectedHourChanged(int value) => UpdateEndTime();
+        partial void OnSelectedMinuteChanged(int value) => UpdateEndTime();
 
         [RelayCommand]
         private async Task LoadPerformances()
@@ -94,9 +134,18 @@ namespace StageX_DesktopApp.ViewModels
             SelectedShow = ShowsList.FirstOrDefault(s => s.ShowId == p.ShowId);
             SelectedTheater = TheatersList.FirstOrDefault(t => t.TheaterId == p.TheaterId);
             PerfDate = p.PerformanceDate;
-            StartTimeStr = p.StartTime.ToString(@"hh\:mm");
-            PriceStr = p.Price.ToString("F0");
-            StatusIndex = (p.Status == "Đã hủy") ? 1 : 0;
+            SelectedHour = p.StartTime.Hours;
+            SelectedMinute = p.StartTime.Minutes;
+            if (!MinutesList.Contains(SelectedMinute)) SelectedMinute = 0; PriceStr = p.Price.ToString("F0");
+            UpdateEndTime();
+
+            StatusOptions = new ObservableCollection<string> { "Đang mở bán", "Đã hủy" };
+            if (!StatusOptions.Contains(p.Status))
+            {
+                StatusOptions.Add(p.Status);
+            }
+            SelectedStatus = p.Status;
+            IsStatusEnabled = true; // Cho phép chọn lại
             SaveBtnContent = "Lưu thay đổi";
             if (p.HasBookings)
             {
@@ -118,9 +167,11 @@ namespace StageX_DesktopApp.ViewModels
             SelectedShow = null;
             SelectedTheater = null;
             PerfDate = DateTime.Now;
-            StartTimeStr = "";
+            SelectedHour = 19; SelectedMinute = 0;
             PriceStr = "";
-            StatusIndex = 0;
+            StatusOptions = new ObservableCollection<string> { "Đang mở bán" };
+            SelectedStatus = "Đang mở bán";
+            IsStatusEnabled = false; // Khóa không cho bấm
             SaveBtnContent = "Thêm suất diễn";
             IsDetailEditable = true;
         }
@@ -128,13 +179,35 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private async Task Save()
         {
-            if (SelectedShow == null || SelectedTheater == null ||
-                !TimeSpan.TryParse(StartTimeStr, out TimeSpan start) ||
-                !decimal.TryParse(PriceStr, out decimal price))
+            // 1. Parse giá tiền
+            decimal.TryParse(PriceStr, out decimal price);
+
+            // 2. Validate dữ liệu
+            if (SelectedShow == null || SelectedTheater == null || price <= 0)
             {
-                MessageBox.Show("Vui lòng nhập đầy đủ thông tin!");
+                MessageBox.Show("Vui lòng nhập đầy đủ thông tin (Vở diễn, Rạp, Giá vé)!");
                 return;
             }
+
+            // 3. Tính toán thời gian
+            DateTime startDateTime = PerfDate.Date.Add(new TimeSpan(SelectedHour, SelectedMinute, 0));
+            DateTime endDateTime = startDateTime.AddMinutes(SelectedShow.DurationMinutes);
+
+            // 4. [SỬA QUAN TRỌNG TẠI ĐÂY] 
+            // Kiểm tra dựa trên chuỗi SelectedStatus thay vì StatusIndex
+            if (SelectedStatus == "Đang mở bán")
+            {
+                if (endDateTime <= DateTime.Now)
+                {
+                    MessageBox.Show($"Không thể mở bán suất diễn đã kết thúc!\n" +
+                                    $"Giờ kết thúc dự kiến: {endDateTime:dd/MM/yyyy HH:mm}\n" +
+                                    $"Vui lòng chọn thời gian khác.",
+                                    "Thời gian không hợp lệ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            TimeSpan start = new TimeSpan(SelectedHour, SelectedMinute, 0);
 
             var perf = new Performance
             {
@@ -144,19 +217,20 @@ namespace StageX_DesktopApp.ViewModels
                 PerformanceDate = PerfDate,
                 StartTime = start,
                 Price = price,
-                Status = StatusIndex == 1 ? "Đã hủy" : "Đang mở bán"
+
+                // [ĐÚNG] Gán trạng thái từ ComboBox
+                Status = SelectedStatus
             };
 
             try
             {
                 await _dbService.SavePerformanceAsync(perf);
-                MessageBox.Show("Lưu thành công!");
+                MessageBox.Show(PerfId > 0 ? "Cập nhật thành công!" : "Thêm mới thành công!");
                 ClearForm();
                 await LoadPerformances();
             }
             catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
         }
-
         [RelayCommand]
         private async Task Delete(Performance p)
         {

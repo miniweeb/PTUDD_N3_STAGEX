@@ -14,19 +14,45 @@ using System.Windows.Media.Imaging;
 
 namespace StageX_DesktopApp.ViewModels
 {
-    public class BillSeatItem
+    // --- CÁC CLASS HỖ TRỢ ---
+    public class BillSeatItem { public int SeatId { get; set; } public string SeatLabel { get; set; } public decimal Price { get; set; } }
+    public class LegendItem { public string Name { get; set; } public SolidColorBrush Color { get; set; } }
+
+    // 1. Wrapper cho Nút Suất chiếu Cao điểm (Viền vàng)
+    public partial class PeakUiItem : ObservableObject
     {
-        public int SeatId { get; set; }
-        public string SeatLabel { get; set; }
-        public decimal Price { get; set; }
+        public PeakPerformanceInfo Data { get; }
+        [ObservableProperty] private bool _isSelected;
+        public PeakUiItem(PeakPerformanceInfo data) { Data = data; }
     }
 
-    public class LegendItem
+    // 2. Wrapper cho Ghế (Sơ đồ)
+    public partial class TicketSeatUiItem : ObservableObject
     {
-        public string Name { get; set; }
-        public SolidColorBrush Color { get; set; }
+        public SeatStatus Data { get; }
+        [ObservableProperty] private bool _isSelected;
+        public IRelayCommand SelectCommand { get; }
+        public string VisualRowChar { get; }
+
+        public TicketSeatUiItem(SeatStatus data, string visualRow, bool isSelected, Action<TicketSeatUiItem> onSelect)
+        {
+            Data = data; VisualRowChar = visualRow; IsSelected = isSelected;
+            SelectCommand = new RelayCommand(() => onSelect(this), () => !Data.IsSold);
+        }
+        public string DisplayText => $"{VisualRowChar}{Data.SeatNumber}";
+        public string TooltipText => Data.IsSold ? "Đã bán" : $"{Data.CategoryName} (+{Data.BasePrice:N0}đ)";
+        public SolidColorBrush BackgroundColor => Data.IsSold ? new SolidColorBrush(Color.FromRgb(80, 80, 80)) : Data.SeatColor;
     }
 
+    // 3. Wrapper cho Hàng ghế
+    public class TicketRowItem
+    {
+        public string RowName { get; set; }
+        public ObservableCollection<object> Items { get; set; }
+        public double RowHeight => string.IsNullOrEmpty(RowName) ? 30 : 45;
+    }
+
+    // --- VIEWMODEL CHÍNH ---
     public partial class SellTicketViewModel : ObservableObject
     {
         private readonly DatabaseService _dbService;
@@ -34,14 +60,19 @@ namespace StageX_DesktopApp.ViewModels
 
         [ObservableProperty] private List<ShowInfo> _shows;
         [ObservableProperty] private List<PerformanceInfo> _performances;
-        [ObservableProperty] private ObservableCollection<PeakPerformanceInfo> _topPerformances;
+
+        // List dùng Wrapper PeakUiItem
+        [ObservableProperty] private ObservableCollection<PeakUiItem> _topPerformances;
+
         [ObservableProperty] private ObservableCollection<BillSeatItem> _billSeats = new();
         [ObservableProperty] private ObservableCollection<LegendItem> _legendItems = new();
+
+        // Dữ liệu sơ đồ ghế MVVM
+        [ObservableProperty] private ObservableCollection<TicketRowItem> _seatMap;
 
         [ObservableProperty] private bool _isPeakMode = false;
         [ObservableProperty] private ShowInfo _selectedShow;
         [ObservableProperty] private PerformanceInfo _selectedPerformance;
-
         [ObservableProperty] private string _selectedShowText;
         [ObservableProperty] private string _selectedPerfText;
         [ObservableProperty] private string _totalText = "Thành tiền: 0đ";
@@ -50,8 +81,6 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private bool _isCashPayment = true;
         [ObservableProperty] private bool _isQrVisible = false;
         [ObservableProperty] private BitmapImage _qrImageSource;
-
-        public event Action<List<SeatStatus>> RequestDrawSeats;
 
         private int _currentPerfId;
         private decimal _currentPrice;
@@ -67,11 +96,70 @@ namespace StageX_DesktopApp.ViewModels
         {
             await Application.Current.Dispatcher.InvokeAsync(async () =>
             {
-                IsPeakMode = false;
-                IsCashPayment = true;
+                IsPeakMode = false; IsCashPayment = true;
                 Shows = await _dbService.GetActiveShowsAsync();
             });
         }
+
+        // --- LOGIC VẼ SƠ ĐỒ (Đã phục hồi đầy đủ) ---
+        private void BuildVisualSeatMap(List<SeatStatus> seats)
+        {
+            if (seats == null || seats.Count == 0) { SeatMap = new ObservableCollection<TicketRowItem>(); return; }
+
+            var distinctRows = seats.Where(s => !string.IsNullOrEmpty(s.RowChar))
+                                    .Select(s => s.RowChar.Trim().ToUpper()).Distinct()
+                                    .OrderBy(r => r.Length).ThenBy(r => r).ToList();
+
+            if (distinctRows.Count == 0) return;
+
+            string maxRowChar = distinctRows.Last();
+            int maxRowIndex = (string.IsNullOrEmpty(maxRowChar) ? 0 : (int)(maxRowChar[0] - 'A'));
+            int maxCol = seats.Max(s => s.SeatNumber);
+
+            var newMap = new ObservableCollection<TicketRowItem>();
+            int visualRowCounter = 0;
+
+            for (int i = 0; i <= maxRowIndex; i++)
+            {
+                string physicalRowChar = ((char)('A' + i)).ToString();
+                var seatsInRow = seats.Where(s => s.RowChar == physicalRowChar).ToList();
+
+                if (seatsInRow.Any())
+                {
+                    string visualLabel = ((char)('A' + visualRowCounter++)).ToString();
+                    var rowItem = new TicketRowItem { RowName = visualLabel, Items = new ObservableCollection<object>() };
+
+                    for (int c = 1; c <= maxCol; c++)
+                    {
+                        var seat = seatsInRow.FirstOrDefault(s => s.SeatNumber == c);
+                        if (seat != null)
+                        {
+                            bool isSelected = BillSeats.Any(b => b.SeatId == seat.SeatId);
+                            var uiItem = new TicketSeatUiItem(seat, visualLabel, isSelected, OnSeatClicked);
+                            rowItem.Items.Add(uiItem);
+                        }
+                        else rowItem.Items.Add(null);
+                    }
+                    newMap.Add(rowItem);
+                }
+                else
+                {
+                    newMap.Add(new TicketRowItem { RowName = "", Items = new ObservableCollection<object>() });
+                }
+            }
+            SeatMap = newMap;
+        }
+
+        private void OnSeatClicked(TicketSeatUiItem item)
+        {
+            if (item.Data.IsSold) return;
+            var existing = BillSeats.FirstOrDefault(x => x.SeatId == item.Data.SeatId);
+            if (existing != null) { BillSeats.Remove(existing); item.IsSelected = false; }
+            else { BillSeats.Add(new BillSeatItem { SeatId = item.Data.SeatId, SeatLabel = item.DisplayText, Price = item.Data.BasePrice + _currentPrice }); item.IsSelected = true; }
+            UpdateTotal();
+        }
+
+        // --- LOGIC CHỌN SUẤT (CAO ĐIỂM & THƯỜNG) ---
 
         [RelayCommand]
         private async Task SwitchMode(string mode)
@@ -83,9 +171,11 @@ namespace StageX_DesktopApp.ViewModels
             {
                 IsCashPayment = false;
                 var tops = await _dbService.GetTopPerformancesAsync();
-                var list = new List<PeakPerformanceInfo>(tops);
-                while (list.Count < 3) list.Add(new PeakPerformanceInfo { performance_id = 0 });
-                TopPerformances = new ObservableCollection<PeakPerformanceInfo>(list);
+                // Tạo Wrapper PeakUiItem
+                var list = new List<PeakUiItem>();
+                foreach (var p in tops) list.Add(new PeakUiItem(p));
+                while (list.Count < 3) list.Add(new PeakUiItem(new PeakPerformanceInfo { performance_id = 0 }));
+                TopPerformances = new ObservableCollection<PeakUiItem>(list);
             }
             else
             {
@@ -94,181 +184,78 @@ namespace StageX_DesktopApp.ViewModels
             }
         }
 
-        partial void OnSelectedShowChanged(ShowInfo value)
-        {
-            if (value == null) return;
-            SelectedShowText = $"Vở diễn: {value.title}";
-            LoadPerformances(value.show_id);
-        }
-
-        private async void LoadPerformances(int showId)
-        {
-            Performances = await _dbService.GetPerformancesByShowAsync(showId);
-        }
-
-        partial void OnSelectedPerformanceChanged(PerformanceInfo value)
-        {
-            if (value == null) return;
-            SelectPerformanceLogic(value.performance_id, value.price, value.Display);
-        }
-
         [RelayCommand]
-        private void SelectPeakPerformance(PeakPerformanceInfo p)
+        private void SelectPeakPerformance(PeakUiItem item)
         {
-            if (p == null || p.performance_id == 0) return;
-            SelectedShowText = $"Vở diễn: {p.show_title}";
-            SelectPerformanceLogic(p.performance_id, p.price, p.Display);
+            if (item == null || item.Data.performance_id == 0) return;
+
+            // Tô viền vàng cho nút vừa chọn
+            foreach (var p in TopPerformances) p.IsSelected = false;
+            item.IsSelected = true;
+
+            SelectedShowText = $"Vở diễn: {item.Data.show_title}";
+            SelectPerformanceLogic(item.Data.performance_id, item.Data.price, item.Data.Display);
         }
+
+        partial void OnSelectedShowChanged(ShowInfo value) { if (value != null) { SelectedShowText = $"Vở diễn: {value.title}"; LoadPerformances(value.show_id); } }
+        private async void LoadPerformances(int showId) => Performances = await _dbService.GetPerformancesByShowAsync(showId);
+        partial void OnSelectedPerformanceChanged(PerformanceInfo value) { if (value != null) SelectPerformanceLogic(value.performance_id, value.price, value.Display); }
 
         private async void SelectPerformanceLogic(int perfId, decimal price, string display)
         {
-            _currentPerfId = perfId;
-            _currentPrice = price;
-            SelectedPerfText = $"Suất chiếu: {display}";
-
-            BillSeats.Clear();
-            UpdateTotal();
-
+            _currentPerfId = perfId; _currentPrice = price; SelectedPerfText = $"Suất chiếu: {display}";
+            BillSeats.Clear(); UpdateTotal();
             try
             {
-                // 1. Gọi DB lấy ghế (Đã map vào SeatStatus mới)
                 var seats = await _dbService.GetSeatsWithStatusAsync(perfId);
 
-                // 2. Báo View vẽ
-                await Application.Current.Dispatcher.InvokeAsync(() => RequestDrawSeats?.Invoke(seats));
+                // Gọi hàm vẽ sơ đồ (Lúc trước bị thiếu dòng này)
+                BuildVisualSeatMap(seats);
 
-                // 3. Tạo Legend
-                var legends = new List<LegendItem>();
+                // Tạo chú thích (Fix lỗi lặp)
                 var distinctCats = seats.Where(s => !string.IsNullOrEmpty(s.CategoryName))
-                                        .Select(s => new { s.CategoryName, s.BasePrice, s.ColorClass })
-                                        .Distinct().OrderBy(x => x.BasePrice);
+                                        .GroupBy(s => new { s.CategoryName, s.BasePrice })
+                                        .Select(g => g.First())
+                                        .OrderBy(x => x.BasePrice);
 
-                foreach (var cat in distinctCats)
-                {
-                    SolidColorBrush brush = Brushes.Gray;
-                    try
-                    {
-                        string hex = cat.ColorClass?.Trim() ?? "333";
-                        if (!hex.StartsWith("#")) hex = "#" + hex;
-                        brush = (SolidColorBrush)new BrushConverter().ConvertFrom(hex);
-                    }
-                    catch { }
-
-                    legends.Add(new LegendItem { Name = $"{cat.CategoryName} (+{cat.BasePrice:N0}đ)", Color = brush });
-                }
+                var legends = new List<LegendItem>();
+                foreach (var cat in distinctCats) legends.Add(new LegendItem { Name = $"{cat.CategoryName} (+{cat.BasePrice:N0}đ)", Color = cat.SeatColor });
                 LegendItems = new ObservableCollection<LegendItem>(legends);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi tải ghế: " + ex.Message);
-            }
-        }
-
-        public void ToggleSeat(SeatStatus seat)
-        {
-            var existing = BillSeats.FirstOrDefault(x => x.SeatId == seat.SeatId);
-            if (existing != null) BillSeats.Remove(existing);
-            else BillSeats.Add(new BillSeatItem { SeatId = seat.SeatId, SeatLabel = seat.SeatLabel, Price = seat.BasePrice + _currentPrice });
-            UpdateTotal();
+            catch (Exception ex) { MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message); }
         }
 
         partial void OnCashGivenChanged(string value) => UpdateTotal();
-
         private async void UpdateTotal()
         {
-            decimal total = BillSeats.Sum(x => x.Price);
-            TotalText = $"Thành tiền: {total:N0}đ";
-
-            if (decimal.TryParse(CashGiven, out decimal given))
-            {
-                decimal change = given - total;
-                ChangeText = change >= 0 ? $"{change:N0}đ" : $"-{Math.Abs(change):N0}đ";
-            }
-            else ChangeText = "0đ";
-
-            if (!IsCashPayment && total > 0)
-            {
-                IsQrVisible = true;
-                QrImageSource = await _qrService.GenerateQrCodeAsync((int)total, "Thanh toan STAGEX");
-            }
-            else
-            {
-                IsQrVisible = false;
-                QrImageSource = null;
-            }
+            decimal total = BillSeats.Sum(x => x.Price); TotalText = $"Thành tiền: {total:N0}đ";
+            if (decimal.TryParse(CashGiven, out decimal given)) { decimal change = given - total; ChangeText = change >= 0 ? $"{change:N0}đ" : $"-{Math.Abs(change):N0}đ"; } else ChangeText = "0đ";
+            if (!IsCashPayment && total > 0) { IsQrVisible = true; QrImageSource = await _qrService.GenerateQrCodeAsync((int)total, "Thanh toan STAGEX"); } else { IsQrVisible = false; QrImageSource = null; }
         }
-
-        [RelayCommand]
-        private void SelectPayment(string method)
-        {
-            IsCashPayment = (method == "Cash");
-            UpdateTotal();
-        }
-
+        [RelayCommand] private void SelectPayment(string method) { IsCashPayment = (method == "Cash"); UpdateTotal(); }
         [RelayCommand]
         private async Task SaveOrder()
         {
-            if (_currentPerfId == 0 || !BillSeats.Any()) 
-            { 
-                MessageBox.Show("Vui lòng chọn suất và ghế!"); 
-                return; 
-            }
-            
+            if (_currentPerfId == 0 || !BillSeats.Any()) { MessageBox.Show("Vui lòng chọn suất và ghế!"); return; }
             decimal total = BillSeats.Sum(x => x.Price);
-
             if (IsCashPayment)
             {
-                // 1. Kiểm tra nhập liệu có phải số không
-                if (!decimal.TryParse(CashGiven, out decimal given)) 
-                { 
-                    MessageBox.Show("Vui lòng nhập số tiền hợp lệ!"); 
-                    return; 
-                }
-
-                // 2. [MỚI] Kiểm tra số tròn nghìn (Chia hết cho 1000)
-                if (given % 1000 != 0)
-                {
-                    MessageBox.Show("Số tiền khách đưa phải là số tròn nghìn (Ví dụ: 50.000, 100.000)!");
-                    return;
-                }
-
-                // 3. Kiểm tra đủ tiền chưa
-                if (given < total) 
-                { 
-                    MessageBox.Show($"Khách đưa thiếu tiền! Cần thanh toán: {total:N0}đ"); 
-                    return; 
-                }
+                if (!decimal.TryParse(CashGiven, out decimal given)) { MessageBox.Show("Nhập tiền hợp lệ!"); return; }
+                if (given % 1000 != 0) { MessageBox.Show("Tiền phải tròn nghìn!"); return; }
+                if (given < total) { MessageBox.Show("Khách đưa thiếu tiền!"); return; }
             }
-
-            // Nếu qua hết các bước kiểm tra thì tiến hành lưu xuống DB
             try
             {
-                int staffId = AuthSession.CurrentUser?.UserId ?? 0;
-                int bookingId = await _dbService.CreateBookingPOSAsync(null, _currentPerfId, total, staffId);
-
+                int bookingId = await _dbService.CreateBookingPOSAsync(null, _currentPerfId, total, AuthSession.CurrentUser?.UserId ?? 0);
                 if (bookingId > 0)
                 {
-                    string method = IsCashPayment ? "Tiền mặt" : "Chuyển khoản";
-                    var seatIds = BillSeats.Select(s => s.SeatId).ToList();
-                    await _dbService.CreatePaymentAndTicketsAsync(bookingId, total, method, seatIds);
-
+                    await _dbService.CreatePaymentAndTicketsAsync(bookingId, total, IsCashPayment ? "Tiền mặt" : "Chuyển khoản", BillSeats.Select(s => s.SeatId).ToList());
                     MessageBox.Show("Thanh toán thành công!");
-                    
-                    if (IsPeakMode) SwitchMode("Peak");
-                    else SelectPerformanceLogic(_currentPerfId, _currentPrice, SelectedPerfText.Replace("Suất chiếu: ", ""));
+                    if (IsPeakMode) SwitchMode("Peak"); else SelectPerformanceLogic(_currentPerfId, _currentPrice, SelectedPerfText.Replace("Suất chiếu: ", ""));
                 }
             }
             catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
         }
-
-        private void ClearAllData()
-        {
-            SelectedShow = null; SelectedPerformance = null;
-            _currentPerfId = 0; _currentPrice = 0;
-            SelectedShowText = ""; SelectedPerfText = "";
-            BillSeats.Clear(); LegendItems.Clear();
-            CashGiven = ""; UpdateTotal();
-            RequestDrawSeats?.Invoke(new List<SeatStatus>());
-        }
+        private void ClearAllData() { SelectedShow = null; SelectedPerformance = null; _currentPerfId = 0; _currentPrice = 0; SelectedShowText = ""; SelectedPerfText = ""; BillSeats.Clear(); LegendItems.Clear(); CashGiven = ""; UpdateTotal(); SeatMap = null; }
     }
 }

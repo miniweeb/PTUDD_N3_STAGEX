@@ -12,73 +12,6 @@
         <vm:AccountViewModel />
     </UserControl.DataContext>
 
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-
-        <Style x:Key="ButtonAddStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF198754"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-        <Style x:Key="ButtonEditStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF0D6EFD"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,3"/>
-            <Setter Property="Margin" Value="0,0,5,0"/>
-        </Style>
-        <Style x:Key="ButtonDeleteStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFDC3545"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,3"/>
-        </Style>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CaretBrush" Value="White"/>
-            <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Foreground" Value="Gray"/>
-                    <Setter Property="Background" Value="#FF222222"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style TargetType="PasswordBox">
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#FF222222"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style TargetType="ComboBox">
-            <Style.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="White"/>
-            </Style.Resources>
-            <Setter Property="Foreground" Value="Black"/>
-        </Style>
-
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-    </UserControl.Resources>
-
     <Grid Margin="25">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -102,17 +35,17 @@
 
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="Tên tài khoản:" Margin="0,5,0,5" Foreground="Gray"/>
-                        <TextBox Text="{Binding AccountName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsNewUser}"/>
+                        <TextBox Text="{Binding AccountName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsDetailEditable}"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="5,0,5,0">
                         <TextBlock Text="Email:" Margin="0,5,0,5" Foreground="Gray"/>
-                        <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsNewUser}"/>
+                        <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsDetailEditable}"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Margin="10,0,0,0">
                         <TextBlock Text="Mật khẩu:" Margin="0,5,0,5" Foreground="Gray"/>
-                        <PasswordBox x:Name="PasswordBox" IsEnabled="{Binding IsNewUser}"/>
+                        <PasswordBox x:Name="PasswordBox" IsEnabled="{Binding IsDetailEditable}"/>
                     </StackPanel>
                 </Grid>
 
@@ -139,13 +72,9 @@
                         </ComboBox>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Right">
-                        <Button Content="{Binding SaveBtnContent}" Style="{StaticResource ButtonAddStyle}" 
-                                Command="{Binding SaveCommand}" CommandParameter="{Binding ElementName=PasswordBox}" Width="145"/>
-
-                        <Button Content="Hủy" Margin="10,0,0,0" Padding="10,5" Background="Gray" Foreground="White" BorderThickness="0"
-                                Command="{Binding ClearCommand}"
-                                Visibility="{Binding IsClearVisible, Converter={StaticResource BoolToVis}}" Width="136"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                        <Button Content="{Binding SaveBtnContent}" Style="{StaticResource ButtonAddStyle}" Width="180" Height="32" Click="SaveButton_Click"/>
+                        <Button Content="Làm mới / Hủy" Command="{Binding ClearCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="180" Height="32"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
@@ -154,29 +83,32 @@
         <TextBlock Grid.Row="2" Text="DANH SÁCH TÀI KHOẢN" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,20,0,10"/>
 
         <DataGrid Grid.Row="3" ItemsSource="{Binding Accounts}"
-                  IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
-                  Background="Transparent" RowBackground="Transparent" Foreground="White" BorderThickness="0"
-                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" HeadersVisibility="Column"
-                  RowHeaderWidth="0">
+                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+Background="Transparent" RowBackground="Transparent" 
+Foreground="White" BorderThickness="0"
+GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
+RowHeaderWidth="0" HeadersVisibility="Column"
+RowHeight="30">
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding UserId}" Width="50" Visibility="Collapsed"/>
                 <DataGridTextColumn Header="TÊN TÀI KHOẢN" Binding="{Binding AccountName}" Width="*"/>
                 <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="2*"/>
-                <DataGridTextColumn Header="VAI TRÒ" Binding="{Binding Role}" Width="*"/>
-                <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding Status}" Width="*"/>
+                <DataGridTextColumn Header="VAI TRÒ" Binding="{Binding Role}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
+                <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding Status}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
 
                 <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Cập nhật" Style="{StaticResource ButtonEditStyle}" 
-                                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}"/>
+                            <UniformGrid Rows="1" HorizontalAlignment="Center" Width="100">
+                                <Button Content="Sửa" Style="{StaticResource ButtonEditStyle}"
+            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+            CommandParameter="{Binding}"
+            Height="28" Padding="0" Margin="0,0,3,0"/>
                                 <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}" 
-                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}"/>
-                            </StackPanel>
+            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+            CommandParameter="{Binding}"
+            Height="28" Padding="0" Margin="3,0,0,0"/>
+                            </UniformGrid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

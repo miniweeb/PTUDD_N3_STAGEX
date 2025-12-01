@@ -1,51 +1,52 @@
 ﻿using Microsoft.ML;
+using Microsoft.ML.Data;
 using Microsoft.ML.Transforms.TimeSeries;
-using StageX_DesktopApp.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace StageX_DesktopApp.Services
 {
+    // Input model cho ML
+    public class RevenueInput
+    {
+        public DateTime Date { get; set; }
+        public float TotalRevenue { get; set; }
+    }
+
+    // Output model
+    public class RevenueForecast
+    {
+        public float[] ForecastedRevenue { get; set; }
+        public float[] LowerBoundRevenue { get; set; }
+        public float[] UpperBoundRevenue { get; set; }
+    }
+
     public class RevenueForecastingService
     {
-        private MLContext _mlContext;
-
-        public RevenueForecastingService()
+        public RevenueForecast Predict(List<RevenueInput> historyData, int horizon)
         {
-            _mlContext = new MLContext(seed: 0); // Seed cố định để kết quả nhất quán
-        }
+            if (historyData == null || historyData.Count < 6) return null; // Cần tối thiểu dữ liệu
 
-        /// <summary>
-        /// Dự báo doanh thu cho 'horizon' ngày tiếp theo
-        /// </summary>
-        /// <param name="historyData">Danh sách doanh thu lịch sử</param>
-        /// <param name="horizon">Số ngày muốn dự báo (ví dụ: 7 ngày)</param>
-        public RevenueForecast Predict(List<RevenueInput> historyData, int horizon = 7)
-        {
-            // 1. Chuyển dữ liệu List -> IDataView
-            var dataView = _mlContext.Data.LoadFromEnumerable(historyData);
+            var mlContext = new MLContext();
+            var dataView = mlContext.Data.LoadFromEnumerable(historyData);
 
-            var forecastingPipeline = _mlContext.Forecasting.ForecastBySsa(
+            // Pipeline dự báo (SSA)
+            var forecastingPipeline = mlContext.Forecasting.ForecastBySsa(
                 outputColumnName: nameof(RevenueForecast.ForecastedRevenue),
                 inputColumnName: nameof(RevenueInput.TotalRevenue),
-                windowSize: 2,       // Kích thước cửa sổ phân tích (7 ngày 1 tuần)
-                seriesLength: 6,    // Độ dài chuỗi tối thiểu để học (30 ngày)
+                windowSize: 3,
+                seriesLength: historyData.Count,
                 trainSize: historyData.Count,
                 horizon: horizon,
                 confidenceLevel: 0.95f,
-                confidenceLowerBoundColumn: nameof(RevenueForecast.LowerBound),
-                confidenceUpperBoundColumn: nameof(RevenueForecast.UpperBound));
+                confidenceLowerBoundColumn: nameof(RevenueForecast.LowerBoundRevenue),
+                confidenceUpperBoundColumn: nameof(RevenueForecast.UpperBoundRevenue));
 
-            // 3. Train model (Fit)
             var model = forecastingPipeline.Fit(dataView);
+            var forecastingEngine = model.CreateTimeSeriesEngine<RevenueInput, RevenueForecast>(mlContext);
 
-            // 4. Tạo engine dự báo
-            var forecastingEngine = model.CreateTimeSeriesEngine<RevenueInput, RevenueForecast>(_mlContext);
-
-            // 5. Thực hiện dự báo
-            var forecast = forecastingEngine.Predict();
-
-            return forecast;
+            return forecastingEngine.Predict();
         }
     }
 }

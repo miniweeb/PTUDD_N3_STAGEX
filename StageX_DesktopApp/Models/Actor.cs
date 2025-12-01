@@ -13,12 +13,11 @@ namespace StageX_DesktopApp.Models
 
         [Column("full_name")]
         public string FullName { get; set; }
+        [Column("date_of_birth")] public DateTime? DateOfBirth { get; set; }
+        [Column("gender")] public string? Gender { get; set; }
 
         [Column("nick_name")]
         public string? NickName { get; set; }
-
-        [Column("avatar_url")]
-        public string? AvatarUrl { get; set; }
 
         [Column("email")]
         public string? Email { get; set; }

@@ -1,75 +1,16 @@
 ﻿<UserControl x:Class="StageX_DesktopApp.Views.TheaterSeatView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:StageX_DesktopApp.ViewModels"
-             mc:Ignorable="d"
-             Background="#FF1A1A1A" Foreground="White"
-             d:DesignHeight="768" d:DesignWidth="1366">
+             xmlns:util="clr-namespace:StageX_DesktopApp.Utilities"
+             xmlns:views="clr-namespace:StageX_DesktopApp.Views"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" Background="#FF1A1A1A" Foreground="White" d:DesignHeight="768" d:DesignWidth="1366">
 
     <UserControl.DataContext>
         <vm:TheaterSeatViewModel />
     </UserControl.DataContext>
-
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
-        <Style x:Key="ButtonAddStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF198754"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-        <Style x:Key="ButtonEditStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFffc107"/>
-            <Setter Property="Foreground" Value="Black"/>
-            <Setter Property="Padding" Value="8,3"/>
-        </Style>
-        <Style x:Key="ButtonDeleteStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFDC3545"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,3"/>
-        </Style>
-        <Style x:Key="ButtonViewStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFffc107"/>
-            <Setter Property="Foreground" Value="Black"/>
-            <Setter Property="Padding" Value="8,3"/>
-        </Style>
-        <Style x:Key="ButtonSaveStyle" TargetType="Button" BasedOn="{StaticResource ButtonEditStyle}">
-            <Setter Property="Padding" Value="10,5"/>
-        </Style>
-        <Style x:Key="ButtonCancelStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF6C757D"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-        </Style>
-        <Style x:Key="ButtonSpecialStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFffc107"/>
-            <Setter Property="Foreground" Value="Black"/>
-            <Setter Property="Padding" Value="8,3"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="6"/>
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-        </Style>
-        <Style TargetType="ComboBox">
-            <Style.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="White"/>
-            </Style.Resources>
-            <Setter Property="Foreground" Value="Black"/>
-        </Style>
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-    </UserControl.Resources>
 
     <Grid Margin="15">
         <Grid.RowDefinitions>
@@ -77,11 +18,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="QUẢN LÝ SƠ ĐỒ RẠP &amp; HẠNG GHẾ" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,15"/>
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="QUẢN LÝ SƠ ĐỒ RẠP &amp; HẠNG GHẾ" FontSize="24" FontWeight="Bold" Foreground="#FFffc107"/>
+        </Grid>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.4*"/>
+                <ColumnDefinition Width="1.8*"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
@@ -90,128 +33,94 @@
                 <StackPanel>
                     <Border Background="#FF0C1220" CornerRadius="5" Padding="15" Margin="0,0,0,10">
                         <StackPanel>
-                            <TextBlock Text="1. TẠO RẠP MỚI (Xem trước)" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,10"/>
+                            <TextBlock Text="{Binding PanelTitle}" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,10"/>
+
                             <TextBlock Text="Tên rạp:" Margin="0,5,0,5" Foreground="Gray"/>
-                            <TextBox Text="{Binding NewTheaterName, UpdateSourceTrigger=PropertyChanged}"/>
-                            <Grid Margin="0,5,0,0">
+                            <TextBox Text="{Binding InputTheaterName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsReadOnlyMode, Converter={StaticResource InvertBoolConverter}}"/>
+
+                            <Grid Margin="0,10,0,0" Visibility="{Binding IsCreatingNew, Converter={StaticResource BoolToVis}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                    <TextBlock Text="Số hàng:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <TextBox Text="{Binding NewRows, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="Số hàng:" Foreground="Gray"/>
+                                    <TextBox Text="{Binding InputRows}" util:TextBoxHelper.IsNumeric="True"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                    <TextBlock Text="Số cột:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <TextBox Text="{Binding NewCols, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="Số cột:" Foreground="Gray"/>
+                                    <TextBox Text="{Binding InputCols}" util:TextBoxHelper.IsNumeric="True"/>
                                 </StackPanel>
                             </Grid>
-                            <Button Content="Xem trước sơ đồ" Style="{StaticResource ButtonSpecialStyle}" Margin="0,15,0,0" Command="{Binding PreviewNewTheaterCommand}"/>
-                        </StackPanel>
-                    </Border>
 
-                    <Border x:Name="EditTheaterPanel" Background="#FF0C1220" CornerRadius="5" Padding="15" Margin="0,10,0,10" 
-                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}">
-                        <StackPanel>
-                            <TextBlock Text="{Binding EditPanelTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
-
-                            <StackPanel>
-                                <TextBlock Text="Tên rạp:" Margin="0,5,0,5" Foreground="Gray"/>
-                                <TextBox Text="{Binding EditTheaterName, UpdateSourceTrigger=PropertyChanged}"/>
-                                <Button Content="Lưu tên rạp" Style="{StaticResource ButtonSaveStyle}" Margin="0,10,0,0" Command="{Binding SaveTheaterNameCommand}"/>
-                                <Separator Background="#333" Margin="0,15" Visibility="{Binding IsCreatingNew, Converter={StaticResource BoolToVis}}"/>
-                            </StackPanel>
-
-                            <TextBlock Text="Chọn vùng" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                    <TextBlock Text="Hàng:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <ComboBox x:Name="AssignRowComboBox"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="5,0,5,0">
-                                    <TextBlock Text="Từ ghế:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <ComboBox x:Name="AssignSeatStartComboBox"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Margin="5,0,0,0">
-                                    <TextBlock Text="Đến ghế:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <ComboBox x:Name="AssignSeatEndComboBox"/>
-                                </StackPanel>
-                            </Grid>
-                            <Button Content="Thêm vùng vào lựa chọn" Background="#FF0D6EFD" Foreground="White" Padding="8" FontWeight="Bold" Margin="0,10,0,0" Click="SelectRangeButton_Click"/>
+                            <Button Content="Xem trước sơ đồ" Style="{StaticResource ButtonSpecialStyle}" Margin="0,10,0,0" 
+                                    Command="{Binding PreviewMapCommand}"
+                                    Visibility="{Binding IsCreatingNew, Converter={StaticResource BoolToVis}}"/>
 
                             <Separator Background="#333" Margin="0,15"/>
 
-                            <TextBlock Text="Hành động (Cho ghế đang chọn)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
-                            <Grid>
+                            <TextBlock Text="Cấu hình rạp" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
+
+                            <Grid IsEnabled="{Binding IsReadOnlyMode, Converter={StaticResource InvertBoolConverter}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding RowOptions}" SelectedItem="{Binding SelectedRowOption}" Margin="0,0,5,0" ToolTip="Hàng"/>
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding SeatNumberOptions}" SelectedItem="{Binding SelectedStartOption}" Margin="0,0,5,0" ToolTip="Từ"/>
+                                    <ComboBox Grid.Column="2" ItemsSource="{Binding SeatNumberOptions}" SelectedItem="{Binding SelectedEndOption}" ToolTip="Đến"/>
+                                </Grid>
+                                <Button Grid.Row="1" Content="Chọn vùng" Style="{StaticResource ButtonSpecialStyle}" Margin="0,5,0,0" Command="{Binding SelectRangeCommand}"/>
+                            </Grid>
+
+                            <Grid Margin="0,10,0,0" IsEnabled="{Binding IsReadOnlyMode, Converter={StaticResource InvertBoolConverter}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
                                     <ColumnDefinition Width="1*"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                    <TextBlock Text="Chọn Hạng ghế:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <ComboBox x:Name="AssignCategoryComboBox" ItemsSource="{Binding Categories}" DisplayMemberPath="CategoryName" SelectedValuePath="CategoryId"/>
+                                <StackPanel>
+                                    <TextBlock Text="Gán hạng ghế:" Foreground="Gray"/>
+                                    <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="CategoryName" SelectedValuePath="CategoryId" SelectedValue="{Binding SelectedAssignCategoryId}"/>
                                 </StackPanel>
-                                <Button Grid.Column="1" Content="Áp dụng" Style="{StaticResource ButtonSpecialStyle}" VerticalAlignment="Bottom" Margin="0,0,0,1" Click="AssignSeatButton_Click"/>
+                                <Button Grid.Column="1" Content="Áp dụng" Style="{StaticResource ButtonSpecialStyle}" VerticalAlignment="Bottom" Margin="5,0,0,0" Command="{Binding ApplyCategoryCommand}" Height="32"/>
                             </Grid>
 
-                            <Button Content="Xóa ghế đang chọn" Background="#FFDC3545" Foreground="White" Padding="8" FontWeight="Bold" Margin="0,10,0,0" 
-                                    Click="RemoveSelectedSeats_Click" Visibility="{Binding IsCreatingNew, Converter={StaticResource BoolToVis}}"/>
+                            <Button Content="Xóa ghế đang chọn" Style="{StaticResource ButtonDeleteStyle}" Margin="0,15,0,0" 
+                                    Command="{Binding RemoveSelectedSeatsCommand}"
+                                    IsEnabled="{Binding IsReadOnlyMode, Converter={StaticResource InvertBoolConverter}}" RenderTransformOrigin="0.5,0.5" Height="24">
+                                <Button.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform/>
+                                        <SkewTransform AngleX="0.604"/>
+                                        <RotateTransform/>
+                                        <TranslateTransform X="0.123"/>
+                                    </TransformGroup>
+                                </Button.RenderTransform>
+                            </Button>
 
-                            <Separator Background="#333" Margin="0,15"/>
+                            <Separator Background="#333" Margin="0,5"/>
+
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="{Binding SaveBtnContent}" Style="{StaticResource ButtonAddStyle}" 
-                                        Padding="15,10" 
-                                        Command="{Binding SaveOrUpdateTheaterCommand}"/>
-                                <Button Content="Đóng / Hủy" Style="{StaticResource ButtonCancelStyle}" Margin="10,0,0,0" Command="{Binding CancelEditCommand}"/>
+                                <Button Content="{Binding SaveBtnContent}" Style="{StaticResource ButtonAddStyle}" Width="120"
+                                        Command="{Binding SaveChangesCommand}"
+                                        Visibility="{Binding IsReadOnlyMode, Converter={StaticResource InvertBoolConverter}, ConverterParameter=Vis}"/>
+
+                                <Button Content="Hủy / Làm mới" Style="{StaticResource ButtonCancelStyle}" Margin="10,0,0,0" 
+                                        Command="{Binding ResetToCreateModeCommand}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#FF0C1220" CornerRadius="5" Padding="15" Margin="0,0,0,10">
+                    <Border Background="#FF0C1220" CornerRadius="5">
                         <StackPanel>
-                            <TextBlock Text="2. QUẢN LÝ HẠNG GHẾ" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,10"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                    <TextBlock Text="Tên hạng ghế:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <TextBox Text="{Binding CategoryName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                    <TextBlock Text="Giá phụ thu:" Margin="0,5,0,5" Foreground="Gray"/>
-                                    <TextBox Text="{Binding CategoryPrice, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-                                <Button Grid.Column="1" Content="{Binding CategoryBtnContent}" Command="{Binding SaveCategoryCommand}" Style="{StaticResource ButtonAddStyle}" Height="90" Width="80"/>
-                            </Grid>
-                            <DataGrid MaxHeight="200" Margin="0,15,0,0" ItemsSource="{Binding Categories}" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" Background="Transparent" RowBackground="Transparent" Foreground="White" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" RowHeaderWidth="0">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="TÊN HẠNG" Binding="{Binding CategoryName}" Width="*"/>
-                                    <DataGridTextColumn Header="GIÁ" Binding="{Binding BasePrice, StringFormat='N0'}" Width="Auto"/>
-                                    <DataGridTemplateColumn Header="MÀU" Width="50">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Border Background="{Binding DisplayColor}" Width="20" Height="20" CornerRadius="3"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="Auto">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Content="Sửa" Style="{StaticResource ButtonEditStyle}" Margin="0,0,5,0" Command="{Binding DataContext.EditCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-                                                    <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}" Command="{Binding DataContext.DeleteCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <views:SeatCategoryView Height="250"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -225,33 +134,77 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="#FF0C1220" CornerRadius="5" Padding="15" MinHeight="250" Margin="0,0,0,10">
+                <Border Grid.Row="0" Background="#FF0C1220" CornerRadius="5" Padding="15" MinHeight="300" Margin="0,0,0,10">
                     <Grid>
                         <StackPanel>
-                            <TextBlock x:Name="SeatMapTitle" Text="SƠ ĐỒ GHẾ" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107"  Margin="0,0,0,10"/>
-
-                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center" VerticalAlignment="Top">
-                                <Grid x:Name="SeatMapGrid" Background="Transparent" Margin="10"/>
+                            <TextBlock Text="SƠ ĐỒ GHẾ" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107"  Margin="0,0,0,10"/>
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="250">
+                                <ItemsControl ItemsSource="{Binding SeatMap}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4" MinHeight="{Binding RowHeight}">
+                                                <TextBlock Text="{Binding RowName}" Width="25" VerticalAlignment="Center" FontWeight="Bold" Foreground="Gray" TextAlignment="Right" Margin="0,0,10,0"/>
+                                                <ItemsControl ItemsSource="{Binding Items}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button Content="{Binding DisplayText}" Command="{Binding SelectCommand}"
+                                                                    Width="32" Height="28" Margin="2" FontSize="10" FontWeight="SemiBold"
+                                                                    Background="{Binding BackgroundColor}" Foreground="White">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="{TemplateBinding Background}" CornerRadius="4" x:Name="bd">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                <Setter TargetName="bd" Property="BorderBrush" Value="Red"/>
+                                                                                <Setter TargetName="bd" Property="BorderThickness" Value="2"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                                                <Setter Property="Visibility" Value="Hidden"/>
+                                                                                <Setter Property="IsEnabled" Value="False"/>
+                                                                                <Setter Property="Width" Value="32"/>
+                                                                            </DataTrigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </Viewbox>
-
                         </StackPanel>
-                        <Image Source="/Assets/logo.png" Width="100" Margin="20,0,0,0" VerticalAlignment="Top" Opacity="0.5" HorizontalAlignment="Right"/>
                     </Grid>
                 </Border>
-                
-                <DataGrid Grid.Row="2" ItemsSource="{Binding Theaters}" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" Background="Transparent" RowBackground="Transparent" Foreground="White" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" RowHeaderWidth="0">
+
+                <DataGrid Grid.Row="1" ItemsSource="{Binding Theaters}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                          Background="Transparent" RowBackground="Transparent" Foreground="White" BorderThickness="0"
+                          GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" RowHeaderWidth="0" RowHeight="31">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="ID" Binding="{Binding TheaterId}" Width="50" Visibility="Collapsed"/>
                         <DataGridTextColumn Header="TÊN RẠP" Binding="{Binding Name}" Width="*"/>
-                        <DataGridTextColumn Header="SỨC CHỨA" Binding="{Binding TotalSeats}" Width="Auto"/>
+                        <DataGridTextColumn Header="SỨC CHỨA" Binding="{Binding TotalSeats}" Width="Auto" ElementStyle="{StaticResource CenterCell}"/>
 
-                        <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="Auto">
+                        <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="160">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Button Content="Xem" Margin="0,0,5,0" 
-                                                Command="{Binding DataContext.SelectTheaterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                CommandParameter="{Binding}">
+                                    <Grid>
+                                        <Button Content="Xem" Command="{Binding DataContext.SelectTheaterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                Height="28" Padding="0" Width="80" HorizontalAlignment="Center">
                                             <Button.Style>
                                                 <Style TargetType="Button" BasedOn="{StaticResource ButtonViewStyle}">
                                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -263,12 +216,9 @@
                                                 </Style>
                                             </Button.Style>
                                         </Button>
-
-                                        <Button Content="Sửa" Margin="0,0,5,0" 
-                                                Command="{Binding DataContext.SelectTheaterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                CommandParameter="{Binding}">
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource ButtonEditStyle}">
+                                        <UniformGrid Rows="1" HorizontalAlignment="Center" Width="140">
+                                            <UniformGrid.Style>
+                                                <Style TargetType="UniformGrid">
                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanDelete}" Value="True">
@@ -276,24 +226,11 @@
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </Button.Style>
-                                        </Button>
-
-                                        <Button Content="Xóa"
-                                                Command="{Binding DataContext.DeleteTheaterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                CommandParameter="{Binding}">
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource ButtonDeleteStyle}">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding CanDelete}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </StackPanel>
+                                            </UniformGrid.Style>
+                                            <Button Content="Sửa" Style="{StaticResource ButtonEditStyle}" Command="{Binding DataContext.SelectTheaterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Height="28" Padding="0" Margin="0,0,3,0"/>
+                                            <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}" Command="{Binding DataContext.DeleteTheaterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Height="28" Padding="0" Margin="3,0,0,0"/>
+                                        </UniformGrid>
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

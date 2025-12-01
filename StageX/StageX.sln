@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36717.8 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StageX_DesktopApp", "..\StageX_DesktopApp\StageX_DesktopApp.csproj", "{16CACEBD-A1A2-7B5C-0F4E-307E1AFD9AF9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stagex.Api", "..\stagex_api\Stagex.Api.csproj", "{C100631C-3C7D-6210-B60F-1D06EB1E86CF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{16CACEBD-A1A2-7B5C-0F4E-307E1AFD9AF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16CACEBD-A1A2-7B5C-0F4E-307E1AFD9AF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16CACEBD-A1A2-7B5C-0F4E-307E1AFD9AF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16CACEBD-A1A2-7B5C-0F4E-307E1AFD9AF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C100631C-3C7D-6210-B60F-1D06EB1E86CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C100631C-3C7D-6210-B60F-1D06EB1E86CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C100631C-3C7D-6210-B60F-1D06EB1E86CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C100631C-3C7D-6210-B60F-1D06EB1E86CF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9B1A76E8-593A-4909-8D2B-96FA62A80304}
+	EndGlobalSection
+EndGlobal

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Text.RegularExpressions;
 
 namespace StageX_DesktopApp.ViewModels
 {
@@ -28,8 +29,7 @@ namespace StageX_DesktopApp.ViewModels
         // Điều khiển giao diện
         [ObservableProperty] private string _formTitle = "THÊM TÀI KHOẢN MỚI";
         [ObservableProperty] private string _saveBtnContent = "Thêm tài khoản";
-        [ObservableProperty] private bool _isEditing = false; // Để enable/disable textbox
-        [ObservableProperty] private bool _isNewUser = true;
+        [ObservableProperty] private bool _isDetailEditable = true;
         [ObservableProperty] private bool _isStatusEnabled = false;
 
         public AccountViewModel()
@@ -56,9 +56,9 @@ namespace StageX_DesktopApp.ViewModels
             RoleIndex = (user.Role == "Admin") ? 1 : 0;
             StatusIndex = (user.Status == "khóa") ? 1 : 0;
 
-            IsEditing = true;       // Khóa tên và email
+            //IsEditing = true;       // Khóa tên và email
             IsStatusEnabled = true; // Cho sửa trạng thái
-            IsNewUser = false;      // Đánh dấu là đang sửa
+            IsDetailEditable = false;      // Đánh dấu là đang sửa
             SaveBtnContent = "Lưu thay đổi";
         }
 
@@ -72,9 +72,9 @@ namespace StageX_DesktopApp.ViewModels
             RoleIndex = -1;
             StatusIndex = 0;
 
-            IsEditing = false;      // Mở tên và email
+            //IsEditing = false;      // Mở tên và email
             IsStatusEnabled = false; // Khóa trạng thái (mặc định hoạt động)
-            IsNewUser = true;        // Đánh dấu là thêm mới
+            IsDetailEditable = true;        // Đánh dấu là thêm mới
             SaveBtnContent = "Thêm tài khoản";
         }
 
@@ -90,7 +90,11 @@ namespace StageX_DesktopApp.ViewModels
                 MessageBox.Show("Vui lòng nhập đủ thông tin!");
                 return;
             }
-
+            if (!IsValidEmail(Email))
+            {
+                MessageBox.Show("Email không đúng định dạng! (Ví dụ đúng: ten@gmail.com)", "Lỗi Email", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return; // Dừng ngay lập tức
+            }
             try
             {
                 var user = new User
@@ -148,7 +152,18 @@ namespace StageX_DesktopApp.ViewModels
                 MessageBox.Show("Lỗi: " + ex.Message);
             }
         }
-
+        private bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return false;
+            try
+            {
+                // Regex: Phải có ký tự + @ + ký tự + . + ký tự (ít nhất 2 chữ cái)
+                return Regex.IsMatch(email,
+                    @"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$",
+                    RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+            }
+            catch (RegexMatchTimeoutException) { return false; }
+        }
         [RelayCommand]
         private async Task Delete(User user)
         {

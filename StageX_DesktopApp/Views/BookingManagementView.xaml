@@ -12,54 +12,6 @@
         <vm:BookingManagementViewModel />
     </UserControl.DataContext>
 
-    <UserControl.Resources>
-        <Style x:Key="ButtonSearchStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF0D6EFD"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,8"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ButtonPrintStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFffc107"/>
-            <Setter Property="Foreground" Value="Black"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="CaretBrush" Value="White"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-        </Style>
-    </UserControl.Resources>
-
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -72,23 +24,27 @@
         <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="20" Margin="0,0,0,20">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1.5*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="15"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                <StackPanel Grid.Column="0">
                     <TextBlock Text="Tra cứu (Mã, Tên):" Foreground="Gray" Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}">
                         <TextBox.InputBindings>
                             <KeyBinding Key="Enter" Command="{Binding FilterCommand}"/>
                         </TextBox.InputBindings>
                     </TextBox>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Margin="0,0,15,0">
+                <StackPanel Grid.Column="2">
                     <TextBlock Text="Trạng thái:" Foreground="Gray" Margin="0,0,0,5"/>
-                    <ComboBox SelectedIndex="{Binding StatusIndex}" Padding="8" FontSize="14">
+                    <ComboBox SelectedIndex="{Binding StatusIndex}" Padding="8" FontSize="14" Style="{StaticResource InputStyle}">
                         <ComboBoxItem Content="-- Tất cả --"/>
                         <ComboBoxItem Content="Đang xử lý"/>
                         <ComboBoxItem Content="Đã hoàn thành"/>
@@ -96,8 +52,19 @@
                     </ComboBox>
                 </StackPanel>
 
-                <Button Grid.Column="2" Content="🔍 Tìm kiếm" Style="{StaticResource ButtonSearchStyle}" 
-                        VerticalAlignment="Bottom" Command="{Binding FilterCommand}"/>
+                <StackPanel Grid.Column="4">
+                    <TextBlock Text="Ngày tạo đơn:" Foreground="Gray" Margin="0,0,0,5"/>
+                    <DatePicker SelectedDate="{Binding SelectedDate}" Style="{StaticResource InputStyle}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Button Content="🔍 Lọc" Style="{StaticResource ButtonSearchStyle}" 
+                Width="80" Command="{Binding FilterCommand}"/>
+                    <Button Content="Làm mới" Style="{StaticResource ButtonNormalStyle}" 
+            Margin="10,0,0,0" Padding="0" Width="80"
+            Command="{Binding RefreshCommand}"/>
+
+                    </StackPanel>
             </Grid>
         </Border>
 
@@ -107,32 +74,28 @@
                   HeadersVisibility="Column" Foreground="White" BorderThickness="0"
                   GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333">
 
-            <DataGrid.Resources>
-                <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="Background" Value="Black"/>
-                    <Setter Property="Foreground" Value="White"/>
-                    <Setter Property="Padding" Value="10,8"/>
-                    <Setter Property="FontSize" Value="14"/>
-                    <Setter Property="FontWeight" Value="Bold"/>
-                </Style>
-            </DataGrid.Resources>
-
             <DataGrid.Columns>
-                <DataGridTextColumn Header="MÃ ĐƠN" Binding="{Binding BookingId}" Width="80" FontWeight="Bold"/>
-                <DataGridTextColumn Header="KHÁCH HÀNH" Binding="{Binding CustomerName}" Width="1.2*"/>
-                <DataGridTextColumn Header="NGƯỜI LẬP" Binding="{Binding CreatorName}" Width="1.2*"/>
-                <DataGridTextColumn Header="VỞ DIỄN" Binding="{Binding ShowTitle}" Width="1.5*"/>
-                <DataGridTextColumn Header="SUẤT DIỄN" Binding="{Binding PerformanceTime, StringFormat='dd/MM/yyyy HH:mm'}" Width="140"/>
-                
-                <DataGridTextColumn Header="GHẾ" Binding="{Binding SeatList}" Width="1.5*"/>
+                <DataGridTextColumn Header="MÃ ĐƠN" Binding="{Binding BookingId}" Width="80" FontWeight="Bold" ElementStyle="{StaticResource CenterCell}"/>
+                <DataGridTextColumn Header="KHÁCH HÀNG" Binding="{Binding CustomerName}" Width="1.2*" ElementStyle="{StaticResource LeftCell}"/>
+                <DataGridTextColumn Header="NGƯỜI LẬP" Binding="{Binding CreatorName}" Width="1.2*" ElementStyle="{StaticResource LeftCell}"/>
+                <DataGridTextColumn Header="VỞ DIỄN" Binding="{Binding ShowTitle}" Width="1.5*" ElementStyle="{StaticResource LeftCell}"/>
+                <DataGridTextColumn Header="SUẤT DIỄN" Binding="{Binding PerformanceTime, StringFormat='dd/MM/yyyy HH:mm'}" Width="140" ElementStyle="{StaticResource CenterCell}"/>
 
-                <DataGridTextColumn Header="TỔNG TIỀN" Binding="{Binding TotalAmount, StringFormat='N0'}" Width="120" FontWeight="Bold"/>
-                <DataGridTextColumn Header="NGÀY TẠO" Binding="{Binding CreatedAt, StringFormat='dd/MM/yyyy HH:mm'}" Width="140"/>
-                
+                <DataGridTemplateColumn Header="GHẾ" Width="1.5*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding SeatList}" TextTrimming="CharacterEllipsis" ToolTip="{Binding SeatList}" Style="{StaticResource LeftCell}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="TỔNG TIỀN" Binding="{Binding TotalAmount, StringFormat='N0'}" Width="120" FontWeight="Bold" ElementStyle="{StaticResource CenterCell}"/>
+                <DataGridTextColumn Header="NGÀY TẠO" Binding="{Binding CreatedAt, StringFormat='dd/MM/yyyy HH:mm'}" Width="140" ElementStyle="{StaticResource CenterCell}"/>
+
                 <DataGridTemplateColumn Header="TRẠNG THÁI" Width="140">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Status}" FontWeight="Bold" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Status}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="White"/>
@@ -152,7 +115,7 @@
                                             <DataTrigger Binding="{Binding Status}" Value="Đang chờ">
                                                 <Setter Property="Foreground" Value="#FFffc107"/>
                                             </DataTrigger>
-                                             <DataTrigger Binding="{Binding Status}" Value="Đang xử lý">
+                                            <DataTrigger Binding="{Binding Status}" Value="Đang xử lý">
                                                 <Setter Property="Foreground" Value="#FFffc107"/>
                                             </DataTrigger>
                                         </Style.Triggers>

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:util="clr-namespace:StageX_DesktopApp.Utilities"
              xmlns:vm="clr-namespace:StageX_DesktopApp.ViewModels"
              mc:Ignorable="d"
              Background="#FF1A1A1A" Foreground="White"
@@ -11,114 +12,6 @@
     <UserControl.DataContext>
         <vm:PerformanceViewModel />
     </UserControl.DataContext>
-
-    <UserControl.Resources>
-        <Style x:Key="ButtonAddStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF198754"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="20,8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ButtonEditStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF0D6EFD"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-            <Setter Property="MinWidth" Value="70"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ButtonDeleteStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFDC3545"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="MinWidth" Value="70"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ButtonNormalStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FF6C757D"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="Control" x:Key="InputStyle">
-            <Setter Property="Background" Value="#FF1A1A1A"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#FF333333"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style TargetType="TextBox" BasedOn="{StaticResource InputStyle}"/>
-        <Style TargetType="ComboBox" BasedOn="{StaticResource InputStyle}">
-            <Style.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="White"/>
-            </Style.Resources>
-            <Setter Property="Foreground" Value="Black"/>
-        </Style>
-        <Style TargetType="DatePicker" BasedOn="{StaticResource InputStyle}">
-            <Setter Property="Foreground" Value="Black"/>
-        </Style>
-
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
-
-    </UserControl.Resources>
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -157,7 +50,14 @@
 
                     <StackPanel Grid.Column="4" Margin="0,0,0,8">
                         <TextBlock Text="Ngày diễn:" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
-                        <DatePicker SelectedDate="{Binding PerfDate}" IsEnabled="{Binding IsDetailEditable}"/>
+                        <DatePicker SelectedDate="{Binding PerfDate}" IsEnabled="{Binding IsDetailEditable}">
+                            <DatePicker.Resources>
+                                <Style TargetType="DatePickerTextBox">
+                                    <Setter Property="IsReadOnly" Value="True"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Style>
+                            </DatePicker.Resources>
+                        </DatePicker>
                     </StackPanel>
                 </Grid>
 
@@ -173,27 +73,81 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Giờ bắt đầu (HH:mm):" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
-                        <TextBox Text="{Binding StartTimeStr}" IsEnabled="{Binding IsDetailEditable}"/>
+                        <TextBlock Text="Thời gian diễn (Bắt đầu - Kết thúc):" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="60"/>
+
+                                <ColumnDefinition Width="20"/>
+
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="10"/>
+
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding HoursList}" SelectedItem="{Binding SelectedHour}" IsEnabled="{Binding IsDetailEditable}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StringFormat={}{0:00}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <TextBlock Grid.Column="1" Text=":" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold"/>
+
+                            <ComboBox Grid.Column="2" ItemsSource="{Binding MinutesList}" SelectedItem="{Binding SelectedMinute}" IsEnabled="{Binding IsDetailEditable}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StringFormat={}{0:00}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <TextBlock Grid.Column="4" Text="➔" VerticalAlignment="Center" Foreground="Gray"/>
+
+                            <TextBox Grid.Column="6" Text="{Binding EndTimeStr, Mode=OneWay}" IsReadOnly="True" IsEnabled="{Binding IsDetailEditable}" Style="{StaticResource InputStyle}" ToolTip="Giờ kết thúc (Tự động tính theo thời lượng)"/>
+                        </Grid>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Giá vé (VNĐ):" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
-                        <TextBox Text="{Binding PriceStr}" IsEnabled="{Binding IsDetailEditable}"/>
+                        <TextBox Text="{Binding PriceStr}" IsEnabled="{Binding IsDetailEditable}" util:TextBoxHelper.IsNumeric="True" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="4">
                         <TextBlock Text="Trạng thái:" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
-                        <ComboBox SelectedIndex="{Binding StatusIndex}">
-                            <ComboBoxItem Content="Đang mở bán"/>
-                            <ComboBoxItem Content="Đã hủy"/>
-                            <ComboBoxItem Content="Đã kết thúc"/>
+
+                        <ComboBox ItemsSource="{Binding StatusOptions}" 
+              SelectedItem="{Binding SelectedStatus}"
+              IsEnabled="{Binding IsStatusEnabled}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding}" Value="Đang mở bán">
+                                                        <Setter Property="Foreground" Value="#FF198754"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding}" Value="Đã hủy">
+                                                        <Setter Property="Foreground" Value="#FFDC3545"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
                         </ComboBox>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Bottom">
-                        <Button Content="{Binding SaveBtnContent}" Command="{Binding SaveCommand}" Style="{StaticResource ButtonAddStyle}" Width="125" Height="29"/>
-                        <Button Content="Hủy" Command="{Binding ClearFormCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="31"/>
+                    <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Top" Height="29" Margin="0,22,0,0">
+                        <Button Content="{Binding SaveBtnContent}" Command="{Binding SaveCommand}" Style="{StaticResource ButtonAddStyle}" Width="110" Height="29"/>
+                        <Button Content="Hủy" Command="{Binding ClearFormCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="110"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
@@ -212,7 +166,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Tìm theo tên vở diễn:" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
+                    <TextBlock Text="Tìm theo tên vở diễn:" Margin="0,0,0,3" Foreground="Gray"/>
                     <TextBox Text="{Binding SearchShowName, UpdateSourceTrigger=PropertyChanged}">
                         <TextBox.InputBindings>
                             <KeyBinding Key="Enter" Command="{Binding LoadPerformancesCommand}"/>
@@ -221,12 +175,12 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="Lọc theo rạp:" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
+                    <TextBlock Text="Lọc theo rạp:" Margin="0,0,0,3" Foreground="Gray"/>
                     <ComboBox ItemsSource="{Binding FilterTheaters}" SelectedItem="{Binding SelectedFilterTheater}" DisplayMemberPath="Name"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="4">
-                    <TextBlock Text="Lọc theo ngày:" Margin="0,0,0,3" Foreground="Gray" FontSize="12"/>
+                    <TextBlock Text="Lọc theo ngày:" Margin="0,0,0,3" Foreground="Gray"/>
                     <DatePicker SelectedDate="{Binding SelectedFilterDate}"/>
                 </StackPanel>
 
@@ -244,9 +198,8 @@
         <DataGrid Grid.Row="4" ItemsSource="{Binding Performances}" 
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                   Foreground="White" BorderThickness="0"
-                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333"
-                  RowHeaderWidth="0" Background="Transparent" RowBackground="Transparent">
-
+                  GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
+                  RowHeaderWidth="0" RowHeight="30" Background="Transparent" RowBackground="Transparent" FontSize="13">
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="Background" Value="Black"/>
@@ -254,22 +207,29 @@
                     <Setter Property="Padding" Value="10,12"/>
                     <Setter Property="FontSize" Value="14"/>
                     <Setter Property="FontWeight" Value="Bold"/>
-                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 </Style>
             </DataGrid.ColumnHeaderStyle>
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding PerformanceId}" Width="50" Visibility="Collapsed"/>
-                <DataGridTextColumn Header="VỞ DIỄN" Binding="{Binding ShowTitle}" Width="2*"/>
-                <DataGridTextColumn Header="RẠP" Binding="{Binding TheaterName}" Width="*"/>
-                <DataGridTextColumn Header="NGÀY DIỄN" Binding="{Binding PerformanceDate, StringFormat='dd/MM/yyyy'}" Width="Auto"/>
-                <DataGridTextColumn Header="GIỜ" Binding="{Binding StartTime, StringFormat='hh\\:mm'}" Width="Auto"/>
-                <DataGridTextColumn Header="GIÁ VÉ" Binding="{Binding Price, StringFormat='N0'}" Width="Auto"/>
-
-                <DataGridTemplateColumn Header="TRẠNG THÁI" Width="Auto">
+                <DataGridTemplateColumn Header="VỞ DIỄN" Width="2*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Status}" FontWeight="SemiBold">
+                            <TextBlock Text="{Binding ShowTitle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ShowTitle}" Style="{StaticResource LeftCell}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="RẠP" Binding="{Binding TheaterName}" Width="150" ElementStyle="{StaticResource CenterCell}"/>
+                <DataGridTextColumn Header="NGÀY DIỄN" Binding="{Binding PerformanceDate, StringFormat='dd/MM/yyyy'}" Width="150" ElementStyle="{StaticResource CenterCell}"/>
+                <DataGridTextColumn Header="GIỜ" Binding="{Binding StartTime, StringFormat='hh\\:mm'}" Width="100" ElementStyle="{StaticResource CenterCell}"/>
+                <DataGridTextColumn Header="GIÁ VÉ" Binding="{Binding Price, StringFormat='N0'}" Width="100" ElementStyle="{StaticResource CenterCell}"/>
+
+                <DataGridTemplateColumn Header="TRẠNG THÁI" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Status}" FontWeight="SemiBold" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Style.Triggers>
@@ -293,14 +253,16 @@
                 <DataGridTemplateColumn Header="HÀNH ĐỘNG">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
+                            <UniformGrid Rows="1" HorizontalAlignment="Center" Width="140">
                                 <Button Content="Sửa" Style="{StaticResource ButtonEditStyle}"
-                                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}"/>
-                                <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}"
-                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}"/>
-                            </StackPanel>
+            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+            CommandParameter="{Binding}"
+            Height="28" Padding="0" Margin="0,0,3,0"/>
+                                <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}" 
+            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+            CommandParameter="{Binding}"
+            Height="28" Padding="0" Margin="3,0,0,0"/>
+                            </UniformGrid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
