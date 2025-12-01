@@ -288,7 +288,9 @@
                 <StackPanel Margin="0,10,0,0" Visibility="{Binding IsCashPayment, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="Khách đưa:" Margin="0,0,0,5" Foreground="Gray"/>
                     <TextBox Text="{Binding CashGiven, UpdateSourceTrigger=PropertyChanged}" 
-                             Width="150" HorizontalAlignment="Left" Padding="5" Style="{StaticResource InputStyle}"/>
+             Width="150" HorizontalAlignment="Left" 
+             util:TextBoxHelper.IsNumeric="True" 
+             Style="{StaticResource InputStyle}"/>
                     <TextBlock Text="Tiền thừa:" Margin="0,15,0,5" Foreground="Gray"/>
                     <TextBlock Text="{Binding ChangeText}" FontWeight="Bold" FontSize="24" Foreground="#FF198754"/>
                 </StackPanel>
