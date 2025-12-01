@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 30, 2025 lúc 03:47 PM
--- Phiên bản máy phục vụ: 10.4.32-MariaDB
--- Phiên bản PHP: 8.2.12
+-- Host: 127.0.0.1
+-- Generation Time: Dec 01, 2025 at 01:04 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,12 +18,12 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Cơ sở dữ liệu: `stagex_db`
+-- Database: `stagex_db`
 --
 
 DELIMITER $$
 --
--- Thủ tục
+-- Procedures
 --
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_active_shows` ()   BEGIN
     -- Cập nhật trạng thái suất diễn và vở diễn trước khi lấy dữ liệu
@@ -441,6 +441,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_booking_with_tickets` (IN 
     WHERE b.booking_id = in_booking_id;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_genres` ()   BEGIN
+    SELECT * FROM genres ORDER BY genre_name;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_genre_ids_by_show` (IN `in_show_id` INT)   BEGIN
     SELECT genre_id
     FROM show_genres
@@ -664,6 +668,28 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_revenue_monthly` ()   BEGIN
     WHERE p.status = 'Thành công'
     GROUP BY YEAR(b.created_at), MONTH(b.created_at)
     ORDER BY b.created_at ASC;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_save_actor` (IN `in_id` INT, IN `in_fullname` VARCHAR(255), IN `in_nickname` VARCHAR(255), IN `in_dob` DATE, IN `in_gender` VARCHAR(10), IN `in_email` VARCHAR(255), IN `in_phone` VARCHAR(20), IN `in_status` VARCHAR(50))   BEGIN
+    IF in_id > 0 THEN
+        -- Cập nhật
+        UPDATE actors 
+        SET full_name = in_fullname, nick_name = in_nickname, date_of_birth = in_dob,
+            gender = in_gender, email = in_email, phone = in_phone, status = in_status
+        WHERE actor_id = in_id;
+    ELSE
+        -- Thêm mới
+        INSERT INTO actors (full_name, nick_name, date_of_birth, gender, email, phone, status, created_at)
+        VALUES (in_fullname, in_nickname, in_dob, in_gender, in_email, in_phone, in_status, NOW());
+    END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_save_genre` (IN `in_id` INT, IN `in_name` VARCHAR(100))   BEGIN
+    IF in_id > 0 THEN
+        UPDATE genres SET genre_name = in_name WHERE genre_id = in_id;
+    ELSE
+        INSERT INTO genres (genre_name) VALUES (in_name);
+    END IF;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_seats_with_status` (IN `in_performance_id` INT)   BEGIN
@@ -1042,7 +1068,7 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `actors`
+-- Table structure for table `actors`
 --
 
 CREATE TABLE `actors` (
@@ -1058,7 +1084,7 @@ CREATE TABLE `actors` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `actors`
+-- Dumping data for table `actors`
 --
 
 INSERT INTO `actors` (`actor_id`, `full_name`, `date_of_birth`, `gender`, `nick_name`, `email`, `phone`, `status`, `created_at`) VALUES
@@ -1076,7 +1102,7 @@ INSERT INTO `actors` (`actor_id`, `full_name`, `date_of_birth`, `gender`, `nick_
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `bookings`
+-- Table structure for table `bookings`
 --
 
 CREATE TABLE `bookings` (
@@ -1090,7 +1116,7 @@ CREATE TABLE `bookings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `bookings`
+-- Dumping data for table `bookings`
 --
 
 INSERT INTO `bookings` (`booking_id`, `user_id`, `performance_id`, `total_amount`, `booking_status`, `created_at`, `created_by`) VALUES
@@ -1484,7 +1510,7 @@ INSERT INTO `bookings` (`booking_id`, `user_id`, `performance_id`, `total_amount
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `genres`
+-- Table structure for table `genres`
 --
 
 CREATE TABLE `genres` (
@@ -1494,7 +1520,7 @@ CREATE TABLE `genres` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `genres`
+-- Dumping data for table `genres`
 --
 
 INSERT INTO `genres` (`genre_id`, `genre_name`, `created_at`) VALUES
@@ -1516,7 +1542,7 @@ INSERT INTO `genres` (`genre_id`, `genre_name`, `created_at`) VALUES
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `payments`
+-- Table structure for table `payments`
 --
 
 CREATE TABLE `payments` (
@@ -1533,7 +1559,7 @@ CREATE TABLE `payments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `payments`
+-- Dumping data for table `payments`
 --
 
 INSERT INTO `payments` (`payment_id`, `booking_id`, `amount`, `status`, `payment_method`, `vnp_txn_ref`, `vnp_bank_code`, `vnp_pay_date`, `created_at`, `updated_at`) VALUES
@@ -1927,7 +1953,7 @@ INSERT INTO `payments` (`payment_id`, `booking_id`, `amount`, `status`, `payment
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `performances`
+-- Table structure for table `performances`
 --
 
 CREATE TABLE `performances` (
@@ -1944,7 +1970,7 @@ CREATE TABLE `performances` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `performances`
+-- Dumping data for table `performances`
 --
 
 INSERT INTO `performances` (`performance_id`, `show_id`, `theater_id`, `performance_date`, `start_time`, `end_time`, `status`, `price`, `created_at`, `updated_at`) VALUES
@@ -2018,13 +2044,13 @@ INSERT INTO `performances` (`performance_id`, `show_id`, `theater_id`, `performa
 (68, 17, 2, '2025-12-05', '19:30:00', '21:25:00', 'Đang mở bán', 150000, '2025-10-25 09:00:00', '2025-10-25 09:00:00'),
 (69, 13, 3, '2025-12-05', '14:00:00', '15:35:00', 'Đang mở bán', 120000, '2025-10-25 09:00:00', '2025-10-25 09:00:00'),
 (70, 11, 2, '2025-12-15', '19:30:00', '21:50:00', 'Đang mở bán', 200000, '2025-10-25 09:00:00', '2025-10-25 09:00:00'),
-(71, 17, 1, '2025-12-15', '14:00:00', '15:55:00', 'Đang mở bán', 150000, '2025-10-25 09:00:00', '2025-10-25 09:00:00'),
+(71, 17, 1, '2025-12-15', '14:00:00', NULL, 'Đã hủy', 150000, '2025-10-25 09:00:00', '2025-12-01 11:48:59'),
 (72, 13, 1, '2025-12-15', '19:30:00', '21:05:00', 'Đang mở bán', 150000, '2025-10-25 09:00:00', '2025-10-25 09:00:00');
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `reviews`
+-- Table structure for table `reviews`
 --
 
 CREATE TABLE `reviews` (
@@ -2039,7 +2065,7 @@ CREATE TABLE `reviews` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `seats`
+-- Table structure for table `seats`
 --
 
 CREATE TABLE `seats` (
@@ -2053,7 +2079,7 @@ CREATE TABLE `seats` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `seats`
+-- Dumping data for table `seats`
 --
 
 INSERT INTO `seats` (`seat_id`, `theater_id`, `category_id`, `row_char`, `seat_number`, `real_seat_number`, `created_at`) VALUES
@@ -2170,20 +2196,12 @@ INSERT INTO `seats` (`seat_id`, `theater_id`, `category_id`, `row_char`, `seat_n
 (111, 2, 1, 'A', 8, 8, '2025-11-17 18:58:14'),
 (112, 2, 1, 'B', 8, 8, '2025-11-17 18:58:14'),
 (113, 2, 2, 'C', 8, 8, '2025-11-17 18:58:14'),
-(114, 2, 1, 'D', 8, 8, '2025-11-17 18:58:14'),
-(115, 4, 1, 'A', 1, 1, '2025-11-29 22:19:47'),
-(116, 4, 1, 'A', 2, 2, '2025-11-29 22:19:47'),
-(117, 4, 1, 'B', 1, 1, '2025-11-29 22:19:47'),
-(118, 4, 1, 'B', 2, 2, '2025-11-29 22:19:47'),
-(119, 4, 3, 'C', 1, 1, '2025-11-29 22:19:47'),
-(120, 4, 3, 'C', 2, 2, '2025-11-29 22:19:47'),
-(121, 4, 1, 'D', 1, 1, '2025-11-29 22:19:47'),
-(122, 4, 1, 'D', 2, 2, '2025-11-29 22:19:47');
+(114, 2, 1, 'D', 8, 8, '2025-11-17 18:58:14');
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `seat_categories`
+-- Table structure for table `seat_categories`
 --
 
 CREATE TABLE `seat_categories` (
@@ -2194,7 +2212,7 @@ CREATE TABLE `seat_categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `seat_categories`
+-- Dumping data for table `seat_categories`
 --
 
 INSERT INTO `seat_categories` (`category_id`, `category_name`, `base_price`, `color_class`) VALUES
@@ -2207,7 +2225,7 @@ INSERT INTO `seat_categories` (`category_id`, `category_name`, `base_price`, `co
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `seat_performance`
+-- Table structure for table `seat_performance`
 --
 
 CREATE TABLE `seat_performance` (
@@ -2217,7 +2235,7 @@ CREATE TABLE `seat_performance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `seat_performance`
+-- Dumping data for table `seat_performance`
 --
 
 INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
@@ -5202,7 +5220,7 @@ INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `shows`
+-- Table structure for table `shows`
 --
 
 CREATE TABLE `shows` (
@@ -5218,11 +5236,11 @@ CREATE TABLE `shows` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `shows`
+-- Dumping data for table `shows`
 --
 
 INSERT INTO `shows` (`show_id`, `title`, `description`, `duration_minutes`, `director`, `poster_image_url`, `status`, `created_at`, `updated_at`) VALUES
-(8, 'Đứt dây tơ chùng', 'Câu chuyện xoay quanh những giằng xé trong tình yêu, danh vọng và số phận. Sợi dây tình cảm tưởng chừng bền chặt nhưng lại mong manh trước thử thách của lòng người.', 120, 'Nguyễn Văn Khánh', 'assets/images/dut-day-to-chung-poster.jpg', 'Đã kết thúc', '2025-08-01 00:00:00', '2025-11-30 14:34:45'),
+(8, 'Đứt dây tơ chùng', 'Câu chuyện xoay quanh những giằng xé trong tình yêu, danh vọng và số phận. Sợi dây tình cảm tưởng chừng bền chặt nhưng lại mong manh trước thử thách của lòng người.', 120, 'Nguyễn Văn Khánh', 'assets/images/dut-day-to-chung-poster.jpg', 'Đã kết thúc', '2025-08-01 00:00:00', '2025-12-01 11:49:19'),
 (9, 'Gánh Cỏ Sông Hàn', 'Lấy bối cảnh miền Trung những năm sau chiến tranh, vở kịch khắc họa số phận những con người mưu sinh bên bến sông Hàn, với tình người chan chứa giữa cuộc đời đầy nhọc nhằn.', 110, 'Trần Thị Mai', 'assets/images/ganh-co-poster.jpg', 'Đã kết thúc', '2025-08-01 00:00:00', '2025-11-22 11:47:10'),
 (10, 'Làng Song Sinh', 'Một ngôi làng kỳ bí nơi những cặp song sinh liên tục chào đời. Bí mật phía sau sự trùng hợp ấy dần hé lộ, để rồi đẩy người xem vào những tình huống ly kỳ và ám ảnh.', 100, 'Lê Hoàng Nam', 'assets/images/lang-song-sinh-poster.jpg', 'Đã kết thúc', '2025-08-01 00:00:00', '2025-11-26 04:15:26'),
 (11, 'Lôi Vũ', 'Một trong những vở kịch nổi tiếng nhất thế kỷ XX, “Lôi Vũ” phơi bày những mâu thuẫn giai cấp, đạo đức và gia đình trong xã hội cũ. Vở diễn mang đến sự lay động mạnh mẽ và dư âm lâu dài.', 140, 'Phạm Quang Dũng', 'assets/images/loi-vu.jpg', 'Đang chiếu', '2025-08-01 00:00:00', '2025-11-29 19:56:21'),
@@ -5239,7 +5257,7 @@ INSERT INTO `shows` (`show_id`, `title`, `description`, `duration_minutes`, `dir
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `show_actors`
+-- Table structure for table `show_actors`
 --
 
 CREATE TABLE `show_actors` (
@@ -5248,7 +5266,7 @@ CREATE TABLE `show_actors` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `show_actors`
+-- Dumping data for table `show_actors`
 --
 
 INSERT INTO `show_actors` (`show_id`, `actor_id`) VALUES
@@ -5298,7 +5316,7 @@ INSERT INTO `show_actors` (`show_id`, `actor_id`) VALUES
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `show_genres`
+-- Table structure for table `show_genres`
 --
 
 CREATE TABLE `show_genres` (
@@ -5307,7 +5325,7 @@ CREATE TABLE `show_genres` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `show_genres`
+-- Dumping data for table `show_genres`
 --
 
 INSERT INTO `show_genres` (`show_id`, `genre_id`) VALUES
@@ -5350,7 +5368,7 @@ INSERT INTO `show_genres` (`show_id`, `genre_id`) VALUES
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `theaters`
+-- Table structure for table `theaters`
 --
 
 CREATE TABLE `theaters` (
@@ -5362,19 +5380,18 @@ CREATE TABLE `theaters` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `theaters`
+-- Dumping data for table `theaters`
 --
 
 INSERT INTO `theaters` (`theater_id`, `name`, `total_seats`, `created_at`, `status`) VALUES
 (1, 'Main Hall', 52, '2025-10-03 16:14:11', 'Đã hoạt động'),
 (2, 'Black Box', 32, '2025-10-03 16:14:22', 'Đã hoạt động'),
-(3, 'Studio', 30, '2025-10-03 16:14:32', 'Đã hoạt động'),
-(4, 'tl', 8, '2025-11-29 22:19:47', 'Đã hoạt động');
+(3, 'Studio', 30, '2025-10-03 16:14:32', 'Đã hoạt động');
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `tickets`
+-- Table structure for table `tickets`
 --
 
 CREATE TABLE `tickets` (
@@ -5388,7 +5405,7 @@ CREATE TABLE `tickets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `tickets`
+-- Dumping data for table `tickets`
 --
 
 INSERT INTO `tickets` (`ticket_id`, `booking_id`, `seat_id`, `ticket_code`, `status`, `created_at`, `updated_at`) VALUES
@@ -6387,7 +6404,7 @@ INSERT INTO `tickets` (`ticket_id`, `booking_id`, `seat_id`, `ticket_code`, `sta
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `users`
+-- Table structure for table `users`
 --
 
 CREATE TABLE `users` (
@@ -6403,7 +6420,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `users`
+-- Dumping data for table `users`
 --
 
 INSERT INTO `users` (`user_id`, `email`, `password`, `account_name`, `user_type`, `status`, `is_verified`, `otp_code`, `otp_expires_at`) VALUES
@@ -6423,7 +6440,7 @@ INSERT INTO `users` (`user_id`, `email`, `password`, `account_name`, `user_type`
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `user_detail`
+-- Table structure for table `user_detail`
 --
 
 CREATE TABLE `user_detail` (
@@ -6435,7 +6452,7 @@ CREATE TABLE `user_detail` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `user_detail`
+-- Dumping data for table `user_detail`
 --
 
 INSERT INTO `user_detail` (`user_id`, `full_name`, `date_of_birth`, `address`, `phone`) VALUES
@@ -6444,7 +6461,7 @@ INSERT INTO `user_detail` (`user_id`, `full_name`, `date_of_birth`, `address`, `
 (3, 'Nguyễn Hà Thi', '2005-08-01', NULL, NULL),
 (4, 'Nguyễn Thùy Trinh', '2005-03-12', NULL, NULL),
 (6, 'Lê Thị Mỹ Trang', '2025-11-24', 'QN', ''),
-(7, 'Le My Phung', '2025-11-22', 'BD', ''),
+(7, 'Lê Mỹ Phụng', '2025-11-22', 'BD', NULL),
 (8, 'Nguyễn Thị Na', '2003-11-12', NULL, NULL),
 (9, 'Lê Thùy Linh', '2001-12-12', NULL, NULL),
 (10, 'Nguyễn Văn Hiếu', '2001-12-12', NULL, NULL),
@@ -6453,17 +6470,17 @@ INSERT INTO `user_detail` (`user_id`, `full_name`, `date_of_birth`, `address`, `
 (13, 'Dương Thanh Ngọc', '2005-08-12', '', '');
 
 --
--- Chỉ mục cho các bảng đã đổ
+-- Indexes for dumped tables
 --
 
 --
--- Chỉ mục cho bảng `actors`
+-- Indexes for table `actors`
 --
 ALTER TABLE `actors`
   ADD PRIMARY KEY (`actor_id`);
 
 --
--- Chỉ mục cho bảng `bookings`
+-- Indexes for table `bookings`
 --
 ALTER TABLE `bookings`
   ADD PRIMARY KEY (`booking_id`),
@@ -6472,20 +6489,20 @@ ALTER TABLE `bookings`
   ADD KEY `idx_booking_created_by` (`created_by`);
 
 --
--- Chỉ mục cho bảng `genres`
+-- Indexes for table `genres`
 --
 ALTER TABLE `genres`
   ADD PRIMARY KEY (`genre_id`);
 
 --
--- Chỉ mục cho bảng `payments`
+-- Indexes for table `payments`
 --
 ALTER TABLE `payments`
   ADD PRIMARY KEY (`payment_id`),
   ADD KEY `idx_payment_booking` (`booking_id`);
 
 --
--- Chỉ mục cho bảng `performances`
+-- Indexes for table `performances`
 --
 ALTER TABLE `performances`
   ADD PRIMARY KEY (`performance_id`),
@@ -6493,7 +6510,7 @@ ALTER TABLE `performances`
   ADD KEY `idx_performance_theater` (`theater_id`);
 
 --
--- Chỉ mục cho bảng `reviews`
+-- Indexes for table `reviews`
 --
 ALTER TABLE `reviews`
   ADD PRIMARY KEY (`review_id`),
@@ -6501,7 +6518,7 @@ ALTER TABLE `reviews`
   ADD KEY `idx_review_user` (`user_id`);
 
 --
--- Chỉ mục cho bảng `seats`
+-- Indexes for table `seats`
 --
 ALTER TABLE `seats`
   ADD PRIMARY KEY (`seat_id`),
@@ -6509,46 +6526,46 @@ ALTER TABLE `seats`
   ADD KEY `idx_seat_category` (`category_id`);
 
 --
--- Chỉ mục cho bảng `seat_categories`
+-- Indexes for table `seat_categories`
 --
 ALTER TABLE `seat_categories`
   ADD PRIMARY KEY (`category_id`);
 
 --
--- Chỉ mục cho bảng `seat_performance`
+-- Indexes for table `seat_performance`
 --
 ALTER TABLE `seat_performance`
   ADD KEY `idx_sp_performance` (`performance_id`),
   ADD KEY `idx_sp_seat` (`seat_id`);
 
 --
--- Chỉ mục cho bảng `shows`
+-- Indexes for table `shows`
 --
 ALTER TABLE `shows`
   ADD PRIMARY KEY (`show_id`);
 
 --
--- Chỉ mục cho bảng `show_actors`
+-- Indexes for table `show_actors`
 --
 ALTER TABLE `show_actors`
   ADD KEY `idx_sa_actor` (`actor_id`),
   ADD KEY `fk_sa_show` (`show_id`);
 
 --
--- Chỉ mục cho bảng `show_genres`
+-- Indexes for table `show_genres`
 --
 ALTER TABLE `show_genres`
   ADD KEY `idx_sg_show` (`show_id`),
   ADD KEY `idx_sg_genre` (`genre_id`);
 
 --
--- Chỉ mục cho bảng `theaters`
+-- Indexes for table `theaters`
 --
 ALTER TABLE `theaters`
   ADD PRIMARY KEY (`theater_id`);
 
 --
--- Chỉ mục cho bảng `tickets`
+-- Indexes for table `tickets`
 --
 ALTER TABLE `tickets`
   ADD PRIMARY KEY (`ticket_id`),
@@ -6557,7 +6574,7 @@ ALTER TABLE `tickets`
   ADD KEY `idx_ticket_seat` (`seat_id`);
 
 --
--- Chỉ mục cho bảng `users`
+-- Indexes for table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
@@ -6565,99 +6582,99 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `unique_account` (`account_name`);
 
 --
--- Chỉ mục cho bảng `user_detail`
+-- Indexes for table `user_detail`
 --
 ALTER TABLE `user_detail`
   ADD PRIMARY KEY (`user_id`);
 
 --
--- AUTO_INCREMENT cho các bảng đã đổ
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT cho bảng `actors`
+-- AUTO_INCREMENT for table `actors`
 --
 ALTER TABLE `actors`
-  MODIFY `actor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `actor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
--- AUTO_INCREMENT cho bảng `bookings`
+-- AUTO_INCREMENT for table `bookings`
 --
 ALTER TABLE `bookings`
   MODIFY `booking_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=387;
 
 --
--- AUTO_INCREMENT cho bảng `genres`
+-- AUTO_INCREMENT for table `genres`
 --
 ALTER TABLE `genres`
-  MODIFY `genre_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `genre_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
--- AUTO_INCREMENT cho bảng `payments`
+-- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
   MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=387;
 
 --
--- AUTO_INCREMENT cho bảng `performances`
+-- AUTO_INCREMENT for table `performances`
 --
 ALTER TABLE `performances`
-  MODIFY `performance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
+  MODIFY `performance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
--- AUTO_INCREMENT cho bảng `reviews`
+-- AUTO_INCREMENT for table `reviews`
 --
 ALTER TABLE `reviews`
   MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `seats`
+-- AUTO_INCREMENT for table `seats`
 --
 ALTER TABLE `seats`
-  MODIFY `seat_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=123;
+  MODIFY `seat_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=144;
 
 --
--- AUTO_INCREMENT cho bảng `seat_categories`
+-- AUTO_INCREMENT for table `seat_categories`
 --
 ALTER TABLE `seat_categories`
-  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT cho bảng `shows`
+-- AUTO_INCREMENT for table `shows`
 --
 ALTER TABLE `shows`
-  MODIFY `show_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `show_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
--- AUTO_INCREMENT cho bảng `theaters`
+-- AUTO_INCREMENT for table `theaters`
 --
 ALTER TABLE `theaters`
-  MODIFY `theater_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `theater_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT cho bảng `tickets`
+-- AUTO_INCREMENT for table `tickets`
 --
 ALTER TABLE `tickets`
   MODIFY `ticket_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=991;
 
 --
--- AUTO_INCREMENT cho bảng `users`
+-- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
--- AUTO_INCREMENT cho bảng `user_detail`
+-- AUTO_INCREMENT for table `user_detail`
 --
 ALTER TABLE `user_detail`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
--- Các ràng buộc cho các bảng đã đổ
+-- Constraints for dumped tables
 --
 
 --
--- Các ràng buộc cho bảng `bookings`
+-- Constraints for table `bookings`
 --
 ALTER TABLE `bookings`
   ADD CONSTRAINT `fk_booking_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`),
@@ -6665,62 +6682,62 @@ ALTER TABLE `bookings`
   ADD CONSTRAINT `fk_booking_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `payments`
+-- Constraints for table `payments`
 --
 ALTER TABLE `payments`
   ADD CONSTRAINT `fk_payment_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `performances`
+-- Constraints for table `performances`
 --
 ALTER TABLE `performances`
   ADD CONSTRAINT `fk_performance_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_performance_theater` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`theater_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `reviews`
+-- Constraints for table `reviews`
 --
 ALTER TABLE `reviews`
   ADD CONSTRAINT `fk_review_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `seats`
+-- Constraints for table `seats`
 --
 ALTER TABLE `seats`
   ADD CONSTRAINT `fk_seat_category` FOREIGN KEY (`category_id`) REFERENCES `seat_categories` (`category_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_seat_theater` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`theater_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `seat_performance`
+-- Constraints for table `seat_performance`
 --
 ALTER TABLE `seat_performance`
   ADD CONSTRAINT `fk_sp_performance` FOREIGN KEY (`performance_id`) REFERENCES `performances` (`performance_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_sp_seat` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `show_actors`
+-- Constraints for table `show_actors`
 --
 ALTER TABLE `show_actors`
   ADD CONSTRAINT `fk_sa_actor` FOREIGN KEY (`actor_id`) REFERENCES `actors` (`actor_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_sa_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `show_genres`
+-- Constraints for table `show_genres`
 --
 ALTER TABLE `show_genres`
   ADD CONSTRAINT `fk_sg_genre` FOREIGN KEY (`genre_id`) REFERENCES `genres` (`genre_id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_sg_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `tickets`
+-- Constraints for table `tickets`
 --
 ALTER TABLE `tickets`
   ADD CONSTRAINT `fk_ticket_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_ticket_seat` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`) ON UPDATE CASCADE;
 
 --
--- Các ràng buộc cho bảng `user_detail`
+-- Constraints for table `user_detail`
 --
 ALTER TABLE `user_detail`
   ADD CONSTRAINT `fk_user_detail` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;

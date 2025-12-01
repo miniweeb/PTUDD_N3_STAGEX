@@ -80,7 +80,7 @@
 
                 <StackPanel Grid.Column="0" Margin="0,0,15,0">
                     <TextBlock Text="Mã vé:" Foreground="Gray" Margin="0,0,0,5"/>
-                    <TextBox Width="300"
+                    <TextBox Width="1051"
                              Text="{Binding TicketCode, UpdateSourceTrigger=PropertyChanged}">
                         <TextBox.InputBindings>
                             <KeyBinding Key="Enter" Command="{Binding ScanCommand}"/>
