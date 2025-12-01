@@ -231,70 +231,36 @@ namespace StageX_DesktopApp.Views
         // ==============================================================================
         //  HÀM CHỤP ẢNH CHẤT LƯỢNG CAO (FIX MỜ)
         // ==============================================================================
-        private XImage CaptureChartToXImage(UIElement element, int width, int height)
+        private XImage CaptureChartToXImage(UIElement original, int width, int height)
         {
             try
             {
-                // 1. Lưu trạng thái cũ
-                var originalBackground = (element as Control)?.Background;
-
-                // 2. Ép nền màu tối cho ảnh (để khớp với PDF nền đen)
-                if (element is Control ctrl) ctrl.Background = new SolidColorBrush(Color.FromRgb(30, 30, 30));
-                if (element is LiveCharts.Wpf.Charts.Base.Chart chart)
+                // 1) Clone element bằng VisualBrush
+                var visual = new DrawingVisual();
+                using (var dc = visual.RenderOpen())
                 {
-                    chart.DisableAnimations = true;
-                    chart.Hoverable = false;
-                    chart.DataTooltip = null; // Tắt tooltip để không bị dính vào ảnh
+                    dc.DrawRectangle(new VisualBrush(original), null, new Rect(0, 0, width, height));
                 }
 
-                // 3. Ép Render lại với kích thước mới
-                var size = new Size(width, height);
-                element.Measure(size);
-                element.Arrange(new Rect(size));
-                element.UpdateLayout(); // Bắt buộc
-
-                // 4. Chụp
+                // 2) Render visual clone, KHÔNG ảnh hưởng UI thật
                 var bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-                bmp.Render(element);
+                bmp.Render(visual);
 
-                // 5. Trả lại trạng thái cũ
-                if (element is Control ctrl2) ctrl2.Background = originalBackground;
-                if (element is LiveCharts.Wpf.Charts.Base.Chart chart2)
-                {
-                    chart2.DisableAnimations = false;
-                    chart2.Hoverable = true;
-                }
-
-                // 6. Convert sang XImage
+                // 3) Convert sang XImage
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(bmp));
+
                 using (var ms = new MemoryStream())
                 {
                     encoder.Save(ms);
                     ms.Position = 0;
-                    // Copy ra stream mới để PDFSharp dùng (tránh lỗi stream closed)
-                    var resultMs = new MemoryStream(ms.ToArray());
-                    return XImage.FromStream(resultMs);
+                    return XImage.FromStream(new MemoryStream(ms.ToArray()));
                 }
             }
-            catch { return null; }
-        }
-        private MemoryStream BitmapToStream(BitmapSource bmp)
-        {
-            var stream = new MemoryStream();
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(bmp));
-            encoder.Save(stream);
-            stream.Position = 0;
-            return stream;
-        }
-
-        private XImage BitmapToXImage(BitmapSource bmp)
-        {
-            using var ms = BitmapToStream(bmp);
-            var bytes = ms.ToArray();
-            var tempMs = new MemoryStream(bytes);
-            return XImage.FromStream(tempMs);
+            catch
+            {
+                return null;
+            }
         }
     }
 }
