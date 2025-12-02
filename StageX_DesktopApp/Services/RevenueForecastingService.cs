@@ -7,7 +7,6 @@ using System.Linq;
 
 namespace StageX_DesktopApp.Services
 {
-    // Input model cho ML
     public class RevenueInput
     {
         public DateTime Date { get; set; }

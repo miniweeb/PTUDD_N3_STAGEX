@@ -63,17 +63,15 @@ namespace StageX_DesktopApp.Views
                 DateTime end = DateTime.MaxValue;
                 bool isValidDate = false;
 
-                // Giả lập năm dữ liệu là 2025 (khớp với DB bạn nạp)
                 int year = 2025;
 
                 // 2. Xử lý logic thời gian dựa trên Filter đang chọn
                 if (vm.CurrentOccupancyFilter == "week")
                 {
-                    // Click vào ngày (VD: "26/11") -> Lọc data trọn vẹn ngày đó
                     if (DateTime.TryParseExact($"{label}/{year}", "dd/MM/yyyy", null, DateTimeStyles.None, out DateTime date))
                     {
-                        start = date.Date; // 00:00:00
-                        end = date.Date.AddDays(1).AddTicks(-1); // 23:59:59
+                        start = date.Date; 
+                        end = date.Date.AddDays(1).AddTicks(-1); 
                         isValidDate = true;
                     }
                 }
@@ -102,9 +100,6 @@ namespace StageX_DesktopApp.Views
                 // 3. Gọi ViewModel để cập nhật dữ liệu nếu ngày hợp lệ
                 if (isValidDate)
                 {
-                    // (Tùy chọn) Hiện thông báo nhỏ để biết đang xem ngày nào
-                    // MessageBox.Show($"Đang lọc dữ liệu: {label}");
-
                     await vm.LoadPieChart(start, end);
                     await vm.LoadTopShows(start, end);
                 }
@@ -130,23 +125,24 @@ namespace StageX_DesktopApp.Views
             return result.AddDays(-3); // Trả về Thứ 2 đầu tuần
         }
 
-        // ==============================================================================
-        //  SỰ KIỆN CLICK NÚT XUẤT PDF
-        // ==============================================================================
+        //  CLICK NÚT XUẤT PDF
+
         private async void BtnExportPdf_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                // Hiện màn hình chờ
                 LoadingOverlay.Visibility = Visibility.Visible;
                 ExportProgressBar.Value = 0;
                 ProgressStatusText.Text = "Đang khởi tạo...";
-                await Task.Delay(50);
+                await Task.Delay(50); // Đợi UI render xong overlay
 
+                // Tạo file PDF khổ A4 Ngang
                 string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"BaoCao_StageX_{DateTime.Now:HHmmss}.pdf");
                 var doc = new PdfDocument();
                 doc.Info.Title = "Báo cáo Dashboard StageX";
                 PdfPage page = doc.AddPage();
-                page.Width = XUnit.FromMillimeter(297); // A4 Ngang
+                page.Width = XUnit.FromMillimeter(297);
                 page.Height = XUnit.FromMillimeter(210);
                 XGraphics gfx = XGraphics.FromPdfPage(page);
 
@@ -168,36 +164,35 @@ namespace StageX_DesktopApp.Views
                 ProgressStatusText.Text = "Đang xử lý biểu đồ Doanh thu...";
                 await Task.Delay(50);
 
-                // 2. CHỤP ẢNH BIỂU ĐỒ - TĂNG KÍCH THƯỚC VÀ TỈ LỆ
 
-                // Chart 1: Revenue
+                // Chụp ảnh biểu đồ Doanh thu từ giao diện
                 gfx.DrawString("DOANH THU", fHeader, XBrushes.Cyan, 40, 80);
-                var imgRevenue = CaptureChartToXImage(RevenueChart, 800, 400); // Tăng height lên 400
-                if (imgRevenue != null) gfx.DrawImage(imgRevenue, 40, 110, 350, 180); // Vẽ vào PDF với kích thước nhỏ hơn
+                var imgRevenue = CaptureChartToXImage(RevenueChart, 800, 400); 
+                if (imgRevenue != null) gfx.DrawImage(imgRevenue, 40, 110, 350, 180); 
 
                 ExportProgressBar.Value = 50;
                 ProgressStatusText.Text = "Đang xử lý biểu đồ Tình trạng vé...";
                 await Task.Delay(50);
 
-                // Chart 2: Occupancy (SỬA LỖI BỊ CẮT: Tăng chiều cao capture)
+                // Chụp ảnh biểu đồ Occupancy từ giao diện
                 gfx.DrawString("TÌNH TRẠNG VÉ", fHeader, XBrushes.Cyan, 420, 80);
-                var imgOccupancy = CaptureChartToXImage(OccupancyChart, 800, 500); // Height 500 để chứa hết Legend và Trục X
+                var imgOccupancy = CaptureChartToXImage(OccupancyChart, 800, 500); 
                 if (imgOccupancy != null) gfx.DrawImage(imgOccupancy, 420, 110, 350, 180);
 
                 ExportProgressBar.Value = 70;
                 ProgressStatusText.Text = "Đang xử lý biểu đồ Tỷ lệ vé...";
                 await Task.Delay(50);
 
-                // Chart 3: Pie Chart
+                // Chụp ảnh biểu đồ Pie Chart từ giao diện 
                 gfx.DrawString("TỶ LỆ VÉ", fHeader, XBrushes.Cyan, 40, 310);
-                var imgPie = CaptureChartToXImage(ShowPieChart, 600, 400); // Pie cần rộng để hiện label 2 bên
+                var imgPie = CaptureChartToXImage(ShowPieChart, 600, 400); 
                 if (imgPie != null) gfx.DrawImage(imgPie, 40, 340, 300, 200);
 
                 ExportProgressBar.Value = 90;
                 ProgressStatusText.Text = "Đang xử lý bảng số liệu...";
                 await Task.Delay(50);
 
-                // Chart 4: Table Top 5
+                // Chụp ảnh bảng từ giao diện 
                 gfx.DrawString("TOP 5 VỞ DIỄN", fHeader, XBrushes.Cyan, 420, 310);
                 var imgTable = CaptureChartToXImage(TopShowsGrid, 800, 400);
                 if (imgTable != null) gfx.DrawImage(imgTable, 420, 340, 350, 200);
@@ -207,6 +202,8 @@ namespace StageX_DesktopApp.Views
                 await Task.Delay(100);
 
                 SoundManager.PlaySuccess();
+
+                // Lưu và mở file
                 doc.Save(filePath);
                 LoadingOverlay.Visibility = Visibility.Collapsed;
 
@@ -215,22 +212,6 @@ namespace StageX_DesktopApp.Views
             catch (Exception ex) { MessageBox.Show("Lỗi PDF: " + ex.Message); }
         }
 
-        // Hàm vẽ ô KPI thủ công (để đảm bảo nét và đúng vị trí)
-        private void DrawKPIBox(XGraphics gfx, string title, string value, double x, double y, double w, XFont fontTitle, XFont fontValue)
-        {
-            // Vẽ khung (tùy chọn, ở đây vẽ text thôi cho sạch)
-            // gfx.DrawRectangle(new XPen(XColor.FromArgb(50, 50, 50)), x + 5, y, w - 10, 60);
-
-            gfx.DrawString(title, fontTitle, XBrushes.Orange,
-                new XRect(x, y, w, 20), XStringFormats.Center);
-
-            gfx.DrawString(value, fontValue, XBrushes.White,
-                new XRect(x, y + 25, w, 30), XStringFormats.Center);
-        }
-
-        // ==============================================================================
-        //  HÀM CHỤP ẢNH CHẤT LƯỢNG CAO (FIX MỜ)
-        // ==============================================================================
         private XImage CaptureChartToXImage(UIElement original, int width, int height)
         {
             try
