@@ -101,7 +101,7 @@ namespace StageX_DesktopApp.ViewModels
             });
         }
 
-        // --- LOGIC VẼ SƠ ĐỒ (Đã phục hồi đầy đủ) ---
+        // --- LOGIC VẼ SƠ ĐỒ  ---
         private void BuildVisualSeatMap(List<SeatStatus> seats)
         {
             if (seats == null || seats.Count == 0) { SeatMap = new ObservableCollection<TicketRowItem>(); return; }
@@ -152,12 +152,29 @@ namespace StageX_DesktopApp.ViewModels
 
         private void OnSeatClicked(TicketSeatUiItem item)
         {
-            if (item.Data.IsSold) return;
+            if (item.Data.IsSold) return; // Không cho phép chọn ghế đã bán
+
             var existing = BillSeats.FirstOrDefault(x => x.SeatId == item.Data.SeatId);
-            if (existing != null) { BillSeats.Remove(existing); item.IsSelected = false; }
-            else { BillSeats.Add(new BillSeatItem { SeatId = item.Data.SeatId, SeatLabel = item.DisplayText, Price = item.Data.BasePrice + _currentPrice }); item.IsSelected = true; }
+            if (existing != null)
+            {
+                // Nếu đã chọn thì bỏ chọn
+                BillSeats.Remove(existing);
+                item.IsSelected = false;
+            }
+            else
+            {
+                // Thêm ghế vào hóa đơn với giá = giá ghế + phụ thu suất
+                BillSeats.Add(new BillSeatItem
+                {
+                    SeatId = item.Data.SeatId,
+                    SeatLabel = item.DisplayText,
+                    Price = item.Data.BasePrice + _currentPrice
+                });
+                item.IsSelected = true;
+            }
             UpdateTotal();
         }
+
 
         // --- LOGIC CHỌN SUẤT (CAO ĐIỂM & THƯỜNG) ---
 
@@ -170,8 +187,7 @@ namespace StageX_DesktopApp.ViewModels
             if (IsPeakMode)
             {
                 IsCashPayment = false;
-                var tops = await _dbService.GetTopPerformancesAsync();
-                // Tạo Wrapper PeakUiItem
+                var tops = await _dbService.GetTopPerformancesAsync(); // Gọi proc_top3_nearest_performances_extended
                 var list = new List<PeakUiItem>();
                 foreach (var p in tops) list.Add(new PeakUiItem(p));
                 while (list.Count < 3) list.Add(new PeakUiItem(new PeakPerformanceInfo { performance_id = 0 }));
@@ -180,9 +196,10 @@ namespace StageX_DesktopApp.ViewModels
             else
             {
                 IsCashPayment = true;
-                Shows = await _dbService.GetActiveShowsAsync();
+                Shows = await _dbService.GetActiveShowsAsync(); // Gọi proc_active_shows
             }
         }
+
 
         [RelayCommand]
         private void SelectPeakPerformance(PeakUiItem item)
@@ -236,26 +253,47 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private async Task SaveOrder()
         {
-            if (_currentPerfId == 0 || !BillSeats.Any()) { MessageBox.Show("Vui lòng chọn suất và ghế!"); return; }
+            if (_currentPerfId == 0 || !BillSeats.Any())
+            {
+                MessageBox.Show("Vui lòng chọn suất và ghế!");
+                return;
+            }
             decimal total = BillSeats.Sum(x => x.Price);
+
+            // Kiểm tra điều kiện thanh toán tiền mặt
             if (IsCashPayment)
             {
-                if (!decimal.TryParse(CashGiven, out decimal given)) { MessageBox.Show("Nhập tiền hợp lệ!"); return; }
-                if (given % 1000 != 0) { MessageBox.Show("Tiền phải tròn nghìn!"); return; }
-                if (given < total) { MessageBox.Show("Khách đưa thiếu tiền!"); return; }
+                if (!decimal.TryParse(CashGiven, out decimal given) || given % 1000 != 0 || given < total)
+                {
+                    MessageBox.Show("Tiền không hợp lệ hoặc thiếu!");
+                    return;
+                }
             }
+
             try
             {
+                // 1. Tạo booking – proc_create_booking_pos
                 int bookingId = await _dbService.CreateBookingPOSAsync(null, _currentPerfId, total, AuthSession.CurrentUser?.UserId ?? 0);
                 if (bookingId > 0)
                 {
-                    await _dbService.CreatePaymentAndTicketsAsync(bookingId, total, IsCashPayment ? "Tiền mặt" : "Chuyển khoản", BillSeats.Select(s => s.SeatId).ToList());
+                    // 2. Tạo payment và vé – proc_create_payment và proc_create_ticket
+                    await _dbService.CreatePaymentAndTicketsAsync(
+                        bookingId,
+                        total,
+                        IsCashPayment ? "Tiền mặt" : "Chuyển khoản",
+                        BillSeats.Select(s => s.SeatId).ToList());
                     MessageBox.Show("Thanh toán thành công!");
-                    if (IsPeakMode) SwitchMode("Peak"); else SelectPerformanceLogic(_currentPerfId, _currentPrice, SelectedPerfText.Replace("Suất chiếu: ", ""));
+                    // Refresh lại sơ đồ ghế và dữ liệu
+                    if (IsPeakMode) SwitchMode("Peak");
+                    else SelectPerformanceLogic(_currentPerfId, _currentPrice, SelectedPerfText.Replace("Suất chiếu: ", ""));
                 }
             }
-            catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message);
+            }
         }
+
         private void ClearAllData() { SelectedShow = null; SelectedPerformance = null; _currentPerfId = 0; _currentPrice = 0; SelectedShowText = ""; SelectedPerfText = ""; BillSeats.Clear(); LegendItems.Clear(); CashGiven = ""; UpdateTotal(); SeatMap = null; }
     }
 }
