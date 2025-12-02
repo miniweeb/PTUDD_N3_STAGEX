@@ -24,7 +24,6 @@ namespace StageX_DesktopApp.Data
         public DbSet<RevenueMonthly> RevenueMonthlies { get; set; }
         public DbSet<TicketSold> TicketSolds { get; set; }
         public DbSet<TopShow> TopShows { get; set; }
-        public DbSet<RatingDistribution> RatingDistributions { get; set; }
 
         // Model cho trang bán vé
         public DbSet<ShowInfo> ShowInfos { get; set; }
@@ -102,7 +101,6 @@ namespace StageX_DesktopApp.Data
             modelBuilder.Entity<RevenueMonthly>().HasNoKey();
             modelBuilder.Entity<TicketSold>().HasNoKey();
             modelBuilder.Entity<TopShow>().HasNoKey();
-            modelBuilder.Entity<RatingDistribution>().HasNoKey();
             modelBuilder.Entity<ShowInfo>().HasNoKey();
             modelBuilder.Entity<PerformanceInfo>().HasNoKey();
             modelBuilder.Entity<AvailableSeat>().HasNoKey();
