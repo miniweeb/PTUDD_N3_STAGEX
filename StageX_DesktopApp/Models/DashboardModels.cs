@@ -2,10 +2,8 @@
 
 namespace StageX_DesktopApp.Models
 {
-    /// <summary>
     /// Các lớp dữ liệu phục vụ hiển thị bảng điều khiển.
     /// Các thuộc tính khớp với tên cột trả về từ thủ tục lưu trữ trong cơ sở dữ liệu.
-    /// </summary>
     public class DashboardSummary
     {
         public decimal total_revenue { get; set; }
@@ -32,9 +30,7 @@ namespace StageX_DesktopApp.Models
         public long sold_tickets { get; set; }
     }
 
-    /// <summary>
     /// Phân bố đánh giá theo sao. Thuộc tính star (1-5) và rating_count.
-    /// </summary>
     public class RatingDistribution
     {
         public int star { get; set; }

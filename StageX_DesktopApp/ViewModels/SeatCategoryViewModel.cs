@@ -81,7 +81,7 @@ namespace StageX_DesktopApp.ViewModels
 
             decimal.TryParse(BasePriceStr, out decimal price);
 
-            // [FIX 1]: Lấy danh sách mới nhất từ DB để kiểm tra trùng tên
+            // Lấy danh sách mới nhất từ DB để kiểm tra trùng tên
             var currentCats = await _dbService.GetSeatCategoriesAsync();
 
             if (currentCats.Any(c => c.CategoryName.Trim().Equals(CategoryName.Trim(), StringComparison.OrdinalIgnoreCase) && c.CategoryId != CategoryId))
@@ -99,7 +99,7 @@ namespace StageX_DesktopApp.ViewModels
                     BasePrice = price
                 };
 
-                // [FIX 2]: Xử lý màu sắc CHÍNH XÁC HƠN
+                // Xử lý màu sắc CHÍNH XÁC HƠN
                 if (CategoryId == 0) // Thêm mới
                 {
                     // Lấy tất cả các màu đang được sử dụng trong DB (Trim + Upper để so sánh chuẩn)

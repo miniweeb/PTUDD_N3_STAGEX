@@ -26,7 +26,7 @@ namespace StageX_DesktopApp.Services
     {
         public RevenueForecast Predict(List<RevenueInput> historyData, int horizon)
         {
-            if (historyData == null || historyData.Count < 6) return null; // Cần tối thiểu dữ liệu
+            if (historyData == null || historyData.Count < 6) return null; 
 
             var mlContext = new MLContext();
             var dataView = mlContext.Data.LoadFromEnumerable(historyData);

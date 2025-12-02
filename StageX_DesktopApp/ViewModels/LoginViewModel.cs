@@ -128,3 +128,4 @@ namespace StageX_DesktopApp.ViewModels
         }
     }
 }
+

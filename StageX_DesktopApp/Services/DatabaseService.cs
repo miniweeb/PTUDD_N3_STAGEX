@@ -15,22 +15,20 @@ namespace StageX_DesktopApp.Services
         // =================================================================================
         #region User & Auth
 
-        /// <summary>
+      
         /// Tìm User theo Email hoặc Tên đăng nhập để xử lý đăng nhập.
-        /// (Giữ nguyên LINQ vì đơn giản và cần trả về Object User đầy đủ để check pass)
-        /// </summary>
         public async Task<User?> GetUserByIdentifierAsync(string identifier)
         {
             using (var context = new AppDbContext())
             {
                 return await context.Users
+                    // Tìm người dùng đầu tiên thỏa mãn điều kiện:
+                    // Email trùng với identifier HOẶC AccountName trùng với identifier
                     .FirstOrDefaultAsync(u => u.Email == identifier || u.AccountName == identifier);
             }
         }
 
-        /// <summary>
-        /// Lấy danh sách nhân viên và admin (Sử dụng SP có sẵn trong DB)
-        /// </summary>
+        /// Lấy danh sách nhân viên và admin 
         public async Task<List<User>> GetAdminStaffUsersAsync()
         {
             using (var context = new AppDbContext())
@@ -56,9 +54,7 @@ namespace StageX_DesktopApp.Services
             }
         }
 
-        /// <summary>
         /// Lưu thông tin User (Thêm mới hoặc Cập nhật)
-        /// </summary>
         public async Task SaveUserAsync(User user, bool isUpdatePassword)
         {
             using (var context = new AppDbContext())
@@ -74,22 +70,18 @@ namespace StageX_DesktopApp.Services
                         dbUser.Role = user.Role;
                         dbUser.Status = user.Status;
                         if (isUpdatePassword) dbUser.PasswordHash = user.PasswordHash;
-                        // Gọi SP update nếu muốn: proc_update_staff_user
                     }
                 }
                 else
                 {
-                    // Thêm mới
+                    // Thêm mới 
                     context.Users.Add(user);
-                    // Hoặc gọi SP: proc_create_user
                 }
                 await context.SaveChangesAsync();
             }
         }
 
-        /// <summary>
         /// Xóa User (Sử dụng SP xóa nhân viên)
-        /// </summary>
         public async Task DeleteUserAsync(int userId)
         {
             using (var context = new AppDbContext())

@@ -47,6 +47,7 @@ namespace StageX_DesktopApp.ViewModels
             _mailService = new MailService();
             LoadAccountsCommand.Execute(null);
         }
+
         // Hàm tải danh sách tài khoản từ DB
         [RelayCommand]
         private async Task LoadAccounts()
@@ -73,6 +74,7 @@ namespace StageX_DesktopApp.ViewModels
             IsStatusEnabled = true; // Cho sửa trạng thái
             IsDetailEditable = false;      // Đánh dấu là đang sửa
         }
+
         // Hàm xử lý khi bấm nút "Làm mới / Hủy"
         [RelayCommand]
         private void Clear()
@@ -108,7 +110,8 @@ namespace StageX_DesktopApp.ViewModels
             // 2. Validate: Kiểm tra định dạng Email
             if (!IsValidEmail(Email))
             {
-                MessageBox.Show("Email không đúng định dạng! (Ví dụ đúng: ten@gmail.com)", "Lỗi Email", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Email không đúng định dạng! (Ví dụ đúng: ten@gmail.com)", "Lỗi Email", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return; // Dừng ngay lập tức
             }
             try
@@ -134,7 +137,8 @@ namespace StageX_DesktopApp.ViewModels
                     bool isExist = await _dbService.CheckUserExistsAsync(Email, AccountName);
                     if (isExist)
                     {
-                        MessageBox.Show($"Tên tài khoản '{AccountName}' hoặc Email '{Email}' đã tồn tại trong hệ thống!\nVui lòng kiểm tra lại.", "Trùng lặp dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show($"Tên tài khoản '{AccountName}' hoặc Email '{Email}' đã tồn tại trong hệ thống!\nVui lòng kiểm tra lại.", "Trùng lặp dữ liệu", 
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
                         return; // Dừng ngay lập tức: Không gửi mail, không tạo user
                     }
 
@@ -210,7 +214,8 @@ namespace StageX_DesktopApp.ViewModels
                 catch (Exception ex)
                 {
                     // Nếu SP trả về lỗi do ràng buộc đơn hàng, hiển thị thông báo
-                    if (ex.Message.Contains("USER_HAS_BOOKING_HISTORY") || (ex.InnerException != null && ex.InnerException.Message.Contains("USER_HAS_BOOKING_HISTORY")))
+                    if (ex.Message.Contains("USER_HAS_BOOKING_HISTORY") || 
+                        (ex.InnerException != null && ex.InnerException.Message.Contains("USER_HAS_BOOKING_HISTORY")))
                     {
                         MessageBox.Show($"Không thể xóa tài khoản '{user.AccountName}' vì đã có lịch sử giao dịch/đơn hàng.\n\nVui lòng chuyển trạng thái sang 'Khóa' để bảo toàn dữ liệu.",
                                         "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);

@@ -20,7 +20,7 @@ namespace StageX_DesktopApp.ViewModels
     {
         public Seat SeatData { get; }
 
-        // [MỚI] Tên hàng dùng để hiển thị (VD: "B" dù dữ liệu gốc là "C")
+        // Tên hàng dùng để hiển thị (VD: "B" dù dữ liệu gốc là "C")
         private string _visualRowChar;
 
         [ObservableProperty] private bool _isSelected;
@@ -34,7 +34,7 @@ namespace StageX_DesktopApp.ViewModels
             SelectCommand = new RelayCommand(() => onSelect(this));
         }
 
-        // [SỬA] Hiển thị theo tên ảo (Visual) thay vì tên gốc
+        // Hiển thị theo tên ảo (Visual) thay vì tên gốc
         public string DisplayText => $"{_visualRowChar}{SeatData.RealSeatNumber}";
 
         public SolidColorBrush BackgroundColor
@@ -72,7 +72,7 @@ namespace StageX_DesktopApp.ViewModels
         public List<Seat> CurrentSeats { get; set; } = new List<Seat>();
         private List<SeatUiItem> _selectedUiItems = new List<SeatUiItem>();
 
-        // >>> NEW <<< Timer tự động refresh seat_category
+        // Timer tự động refresh seat_category
         private readonly DispatcherTimer _categoryRefreshTimer;
 
         // Trạng thái Form
@@ -109,7 +109,7 @@ namespace StageX_DesktopApp.ViewModels
                 ResetToCreateMode();
             });
 
-            // >>> NEW <<< Khởi tạo timer refresh category mỗi 5s
+            // Khởi tạo timer refresh category mỗi 5s
             _categoryRefreshTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(5)
@@ -126,7 +126,7 @@ namespace StageX_DesktopApp.ViewModels
             Categories = new ObservableCollection<SeatCategory>(await _dbService.GetSeatCategoriesAsync());
         }
 
-        // >>> NEW <<< Refresh seat_category (không reload sơ đồ)
+        // Refresh seat_category (không reload sơ đồ)
         private async Task RefreshCategoriesOnly()
         {
             try
@@ -164,7 +164,7 @@ namespace StageX_DesktopApp.ViewModels
             }
         }
 
-        // >>> NEW <<< Cập nhật màu + thông tin category cho ghế đang hiển thị
+        // Cập nhật màu + thông tin category cho ghế đang hiển thị
         private void UpdateSeatCategoryBinding()
         {
             if (SeatMap == null) return;

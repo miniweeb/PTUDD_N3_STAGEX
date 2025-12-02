@@ -32,7 +32,6 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private SeriesCollection _occupancySeries;
         [ObservableProperty] private List<string> _occupancyLabels;
 
-        // [SỬA LỖI 1]: Thêm biến này và để public để View gọi được
         public string CurrentOccupancyFilter { get; set; } = "week";
 
         // --- BIỂU ĐỒ TRÒN & BẢNG TOP 5 ---
@@ -50,21 +49,24 @@ namespace StageX_DesktopApp.ViewModels
             TopShowsList = new List<TopShowModel>();
         }
 
-        // Hàm này View sẽ gọi
+        // Hàm điều phối chung: Gọi lần lượt các hàm tải dữ liệu thành phần
         public async Task LoadData()
         {
-            await LoadSummary();
-            await LoadRevenueChart();    // [SỬA LỖI 2]: Gọi đúng tên hàm
-            await LoadOccupancy("week");
-            await LoadPieChart();
-            await LoadTopShows();
+            await LoadSummary();       // 1. Tải 4 thẻ KPI
+            await LoadRevenueChart();  // 2. Tải biểu đồ doanh thu
+            await LoadOccupancy("week"); // 3. Tải biểu đồ vé (mặc định theo tuần)
+            await LoadPieChart();      // 4. Tải biểu đồ tròn
+            await LoadTopShows();      // 5. Tải danh sách top 5
         }
 
+        // 1. Tải dữ liệu tổng quan (KPI Cards)
         private async Task LoadSummary()
         {
+            // Gọi Stored Procedure lấy số liệu tổng hợp
             var sum = await _dbService.GetDashboardSummaryAsync();
             if (sum != null)
             {
+                // Cập nhật lên giao diện, định dạng tiền tệ và số lượng
                 RevenueText = $"{sum.total_revenue:N0}đ";
                 OrderText = sum.total_bookings.ToString();
                 ShowText = sum.total_shows.ToString();
@@ -72,12 +74,14 @@ namespace StageX_DesktopApp.ViewModels
             }
         }
 
-        // [SỬA LỖI 2]: Đặt tên thống nhất là LoadRevenueChart
+        // 2. Tải dữ liệu cho Biểu đồ Doanh thu (Line Chart) theo 12 tháng
         private async Task LoadRevenueChart()
         {
             try
             {
+                // Lấy dữ liệu thô từ DB (Tháng, Doanh thu)
                 var rawData = await _dbService.GetRevenueMonthlyAsync();
+
                 var historyData = new List<RevenueInput>();
 
                 if (rawData.Any())
@@ -116,7 +120,7 @@ namespace StageX_DesktopApp.ViewModels
                         var mlService = new RevenueForecastingService();
                         prediction = mlService.Predict(historyData, horizon);
                     }
-                    catch { /* Ignore ML errors */ }
+                    catch { }
                 }
 
                 var chartValuesHistory = new ChartValues<double>();
@@ -157,6 +161,7 @@ namespace StageX_DesktopApp.ViewModels
                     }
                 };
 
+                // Cấu hình Series cho LiveCharts
                 if (prediction != null)
                 {
                     RevenueSeries.Add(new LineSeries
@@ -174,6 +179,7 @@ namespace StageX_DesktopApp.ViewModels
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Revenue Error: " + ex.Message); }
         }
 
+        // 3. Tải dữ liệu cho Biểu đồ Lấp đầy (Occupancy) - Stacked Column
         public async Task LoadOccupancy(string filter)
         {
             CurrentOccupancyFilter = filter; // Cập nhật biến Filter
@@ -183,7 +189,6 @@ namespace StageX_DesktopApp.ViewModels
             var unsold = new ChartValues<double>();
             var labels = new List<string>();
 
-            // Ép thời gian về 2025 (như code trước)
             var anchorDate = new DateTime(2025, 11, 30);
             var culture = System.Globalization.CultureInfo.InvariantCulture;
 
@@ -221,22 +226,25 @@ namespace StageX_DesktopApp.ViewModels
                     labels.Add(key); sold.Add(s); unsold.Add(s > 0 ? s * 0.5 : 0);
                 }
             }
-
+            // Cấu hình 2 cột chồng lên nhau
             OccupancySeries = new SeriesCollection
             {
+                // Cột Vé đã bán (Màu vàng)
                 new StackedColumnSeries { Title = "Đã bán", Values = sold, Fill = new SolidColorBrush(Color.FromRgb(255,193,7)), DataLabels = true },
+                // Cột Vé còn trống (Màu xám tối)
                 new StackedColumnSeries { Title = "Còn trống", Values = unsold, Fill = new SolidColorBrush(Color.FromRgb(60,60,60)), DataLabels = true, Foreground = Brushes.White }
             };
             OccupancyLabels = labels;
         }
 
-        // [SỬA LỖI 3]: Đổi private thành public để View gọi được
+        // 4. Tải dữ liệu Biểu đồ Tròn (Pie Chart) - Tỷ trọng vé bán theo vở diễn
         public async Task LoadPieChart(DateTime? start = null, DateTime? end = null)
         {
             var topShows = await _dbService.GetTopShowsAsync(start, end);
             var series = new SeriesCollection();
             foreach (var show in topShows)
             {
+                // Tạo từng pie cho mỗi vở diễn
                 series.Add(new PieSeries
                 {
                     Title = show.show_name,
@@ -247,11 +255,11 @@ namespace StageX_DesktopApp.ViewModels
             }
             PieSeries = series;
         }
-
-        // [SỬA LỖI 3]: Đổi private thành public để View gọi được
+        // 5. Tải danh sách Top 5 Vở diễn (Bảng xếp hạng)
         public async Task LoadTopShows(DateTime? start = null, DateTime? end = null)
         {
             var shows = await _dbService.GetTopShowsAsync(start, end);
+            // Chuyển đổi dữ liệu sang Model hiển thị (thêm số thứ tự Index)
             TopShowsList = shows.Select((s, i) => new TopShowModel
             {
                 Index = i + 1,

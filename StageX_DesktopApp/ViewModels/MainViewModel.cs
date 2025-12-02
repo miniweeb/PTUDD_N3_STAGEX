@@ -119,7 +119,6 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private void NavigateProfile() => NavigateTo(new ProfileView(), "Profile");
 
-        // Command Đăng xuất
         [RelayCommand]
         private void Logout()
         {

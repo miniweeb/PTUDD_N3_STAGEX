@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Windows.Media; // <-- GHI CHÚ: Thêm thư viện Media
+using System.Windows.Media; 
 
 namespace StageX_DesktopApp.Models
 {
@@ -20,10 +20,7 @@ namespace StageX_DesktopApp.Models
         [Column("color_class")]
         public string ColorClass { get; set; } // Ví dụ: "c0d6efd"
 
-        /// <summary>
-        /// GHI CHÚ: Thuộc tính "ảo" (không lưu vào CSDL)
         /// Tự động chuyển ColorClass (string) thành màu (Brush)
-        /// </summary>
         [NotMapped]
         public SolidColorBrush DisplayColor
         {

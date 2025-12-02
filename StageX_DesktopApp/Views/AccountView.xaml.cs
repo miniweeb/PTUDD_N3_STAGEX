@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using StageX_DesktopApp.ViewModels;
 
 namespace StageX_DesktopApp.Views
-{/
+{
     public partial class AccountView : UserControl
     {
         public AccountView()

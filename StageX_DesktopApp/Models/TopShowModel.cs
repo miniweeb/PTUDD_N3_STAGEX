@@ -2,9 +2,7 @@
 
 namespace StageX_DesktopApp.Models
 {
-    /// <summary>
     /// Model hỗ trợ hiển thị danh sách Top 5 vở diễn bán chạy trên Dashboard.
-    /// </summary>
     public class TopShowModel
     {
         // Số thứ tự (STT: 1, 2, 3...)
