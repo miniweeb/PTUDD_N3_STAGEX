@@ -10,13 +10,14 @@ namespace Stagex.Api.Controllers
     public class TicketScanController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
-        // Constructor: Inject DbContext để truy cập cơ sở dữ liệu
+
         public TicketScanController(AppDbContext dbContext)
         {
             _dbContext = dbContext;
         }
         /// Hàm này nhận vào một request chứa JSON mã vé,
         /// Trả về một kết quả(thường là object hoặc JSON) nói rõ vé đó accepted or rejected.</returns>
+
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] ScanRequest request)
         {
