@@ -5,6 +5,8 @@ using Stagex.Api.Models;
 
 namespace Stagex.Api.Controllers
 {
+    // Định nghĩa đây là một API Controller
+    // Route mặc định sẽ là: api/TicketScan
     [ApiController]
     [Route("api/[controller]")]
     public class TicketScanController : ControllerBase
@@ -21,6 +23,7 @@ namespace Stagex.Api.Controllers
         public async Task<IActionResult> Post([FromBody] ScanRequest request)
         {
             string? code = null;
+            // --- BƯỚC 1: LINH HOẠT LẤY MÃ VÉ TỪ NHIỀU TRƯỜNG KHÁC NHAU ---
             if (!string.IsNullOrWhiteSpace(request.code))
             {
                 code = request.code;
@@ -37,6 +40,7 @@ namespace Stagex.Api.Controllers
             {
                 code = request.ticket_code;
             }
+            // Nếu sau khi kiểm tra hết mà vẫn không có mã nào => Báo lỗi thiếu dữ liệu
             if (string.IsNullOrWhiteSpace(code))
             {
                 return BadRequest(new
@@ -45,7 +49,9 @@ namespace Stagex.Api.Controllers
                     codevalue = "No ticket code provided in payload."
                 });
             }
-
+            // --- BƯỚC 2: KIỂM TRA ĐỊNH DẠNG SỐ ---
+            // Mã vé trong Database là kiểu số (bigint/long).
+            // Nếu chuỗi gửi lên chứa chữ cái => Báo lỗi định dạng ngay.
             if (!long.TryParse(code, out var numericCode))
             {
                 return BadRequest(new
@@ -54,8 +60,11 @@ namespace Stagex.Api.Controllers
                     codevalue = $"Mã vé không hợp lệ: {code}"
                 });
             }
-
+            // --- BƯỚC 3: TRUY VẤN CƠ SỞ DỮ LIỆU ---
+            // Tìm vé đầu tiên trong bảng Tickets khớp với mã vé (TicketCode).
+            // Sử dụng FirstOrDefaultAsync để không gây lỗi nếu không tìm thấy (trả về null).
             var ticket = await _dbContext.Tickets.FirstOrDefaultAsync(t => t.TicketCode == numericCode);
+            // Nếu vé không tồn tại trong hệ thống => Báo lỗi 404 Not Found
             if (ticket == null)
             {
                 return NotFound(new
@@ -65,10 +74,11 @@ namespace Stagex.Api.Controllers
                 });
             }
 
-            // Xét trạng thái hiện tại và cập nhật nếu hợp lệ
+            // --- BƯỚC 4: KIỂM TRA TRẠNG THÁI VÉ (LOGIC NGHIỆP VỤ CHÍNH) ---
             switch (ticket.Status)
             {
                 case "Đang chờ":
+                    // Vé đã được giữ chỗ nhưng chưa thanh toán xong
                     return BadRequest(new
                     {
                         code = "BARCODE",
@@ -87,13 +97,18 @@ namespace Stagex.Api.Controllers
                         codevalue = "Vé này đã bị hủy và không còn giá trị."
                     });
                 case "Hợp lệ":
-                    // Đánh dấu vé là đã sử dụng và ghi lại thời gian cập nhật. Điều này đảm bảo
-                    // cột updated_at phản ánh thời điểm vé được quét.
+                    // --- ĐÂY LÀ TRƯỜNG HỢP THÀNH CÔNG DUY NHẤT ---
+                    // 1. Cập nhật trạng thái sang "Đã sử dụng" để ngăn chặn việc dùng lại vé này lần 2.
                     ticket.Status = "Đã sử dụng";
+
+                    // 2. Ghi lại thời gian quét vé thực tế. 
+                    // Điều này quan trọng để báo cáo xem khách vào rạp lúc mấy giờ.
                     ticket.UpdatedAt = DateTime.Now;
+
+                    // 3. Lưu thay đổi xuống Database
                     await _dbContext.SaveChangesAsync();
-                    // Trả về một thông báo bao gồm mã vé đã quét để
-                    // ứng dụng máy tính có thể hiển thị xác nhận với người dùng
+
+                    // 4. Trả về thông báo thành công cho Client (Desktop App)
                     return Ok(new
                     {
                         code = "BARCODE",

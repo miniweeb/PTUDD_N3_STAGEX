@@ -16,12 +16,13 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private ObservableCollection<Genre> _genres;
 
         // --- CÁC BIẾN DÙNG CHUNG CHO FORM ---
-        [ObservableProperty] private int _currentId = 0; // 0 = Thêm mới, >0 = Cập nhật
+        // ID hiện tại: 0 = Thêm mới, >0 = Cập nhật
+        [ObservableProperty] private int _currentId = 0;
         [ObservableProperty] private string _currentName;
 
         // Điều khiển giao diện nút bấm
         [ObservableProperty] private string _saveButtonContent = "Thêm";
-        [ObservableProperty] private bool _isEditing = false; // Để hiện nút Hủy
+        [ObservableProperty] private bool _isEditing = false;
 
         public GenreViewModel()
         {
@@ -36,19 +37,23 @@ namespace StageX_DesktopApp.ViewModels
             Genres = new ObservableCollection<Genre>(list);
         }
 
-        // Hàm xử lý chính cho nút Lưu (Tự động hiểu là Thêm hay Sửa)
+        // Command: Lưu thể loại (Tự động phân biệt Thêm/Sửa dựa vào CurrentId)
         [RelayCommand]
         private async Task SaveData()
         {
+            // 1. Validate: Kiểm tra rỗng
             if (string.IsNullOrWhiteSpace(CurrentName))
             {
                 MessageBox.Show("Tên thể loại không được để trống!");
                 return;
             }
             string newName = CurrentName.Trim();
+
+            // 2. Validate: Kiểm tra trùng tên (Logic nghiệp vụ quan trọng)
+            // Kiểm tra xem có thể loại nào khác (khác ID hiện tại) mà có tên giống hệt không
             bool isDuplicate = Genres.Any(g =>
-        g.GenreName.Equals(newName, StringComparison.OrdinalIgnoreCase) &&
-        g.GenreId != CurrentId);
+            g.GenreName.Equals(newName, StringComparison.OrdinalIgnoreCase) &&
+            g.GenreId != CurrentId);
 
             if (isDuplicate)
             {
@@ -78,7 +83,7 @@ namespace StageX_DesktopApp.ViewModels
             }
         }
 
-        // Khi bấm nút "Sửa" trên bảng
+        // Command: Đổ dữ liệu lên form để sửa khi click nút "Sửa" trên bảng
         [RelayCommand]
         private void Edit(Genre genre)
         {
@@ -93,14 +98,14 @@ namespace StageX_DesktopApp.ViewModels
             IsEditing = true; // Hiện nút Hủy
         }
 
-        // Khi bấm nút "Hủy"
+        // Command: Hủy bỏ thao tác sửa, quay về thêm mới
         [RelayCommand]
         private void Cancel()
         {
             ResetForm();
         }
 
-        // Hàm đưa Form về trạng thái ban đầu
+        // Hàm tiện ích: Reset các biến binding về mặc định
         private void ResetForm()
         {
             CurrentId = 0;
@@ -109,6 +114,7 @@ namespace StageX_DesktopApp.ViewModels
             IsEditing = false; // Ẩn nút Hủy
         }
 
+        // Command: Xóa thể loại
         [RelayCommand]
         private async Task Delete(Genre genre)
         {
@@ -116,13 +122,16 @@ namespace StageX_DesktopApp.ViewModels
             {
                 try
                 {
+                    // Gọi Service xóa trong DB
                     await _dbService.DeleteGenreAsync(genre.GenreId);
                     await LoadGenres();
-                    // Nếu đang sửa đúng cái vừa xóa thì reset form luôn
+
+                    // Nếu đang sửa đúng cái vừa xóa thì phải reset form ngay để tránh lỗi
                     if (CurrentId == genre.GenreId) ResetForm();
                 }
                 catch
                 {
+                    // Bắt lỗi ràng buộc khóa ngoại (Foreign Key)
                     MessageBox.Show("Không thể xóa (Đang được sử dụng).");
                 }
             }
