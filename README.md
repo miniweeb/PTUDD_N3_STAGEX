@@ -30,7 +30,6 @@ Dự án được xây dựng dựa trên nền tảng .NET 9 và kiến trúc 3
 ### Thư viện & Công nghệ nổi bật
 **Giao diện & MVVM:**
 - CommunityToolkit.Mvvm: Hỗ trợ mô hình MVVM, Messaging, RelayCommand.
-- MahApps.Metro: Giao diện hiện đại (Modern UI).
 
 **Xử lý dữ liệu & Database:**
 - Pomelo.EntityFrameworkCore.MySql: ORM tương tác với MySQL.
