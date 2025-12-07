@@ -82,19 +82,20 @@ Dự án được xây dựng dựa trên nền tảng .NET 9 và kiến trúc 3
 Visual Studio 2022 (hoặc mới hơn) hỗ trợ .NET 9.
 MySQL Server (khuyên dùng XAMPP/WAMP).
 ### Các bước cài đặt
+
 1. Cơ sở dữ liệu:
-Mở công cụ quản lý MySQL (phpMyAdmin hoặc MySQL Workbench).
-Tạo database tên stagex_db.
-Import file stagex_db.sql (nằm trong thư mục gốc) để tạo bảng và Stored Procedures.
+- Mở công cụ quản lý MySQL (phpMyAdmin hoặc MySQL Workbench).
+- Tạo database tên stagex_db.
+- Import file stagex_db.sql (nằm trong thư mục gốc) để tạo bảng và Stored Procedures.
 2. Cấu hình kết nối:
-Mở file StageX_DesktopApp/Data/AppDbContext.cs (hoặc appsettings.json trong project API).
-Cập nhật chuỗi kết nối (Connection String) phù hợp với máy cá nhân:
-"Server=localhost;Database=stagex_db;User=root;Password=;"
+- Mở file StageX_DesktopApp/Data/AppDbContext.cs (hoặc appsettings.json trong project API).
+- Cập nhật chuỗi kết nối (Connection String) phù hợp với máy cá nhân:
+- "Server=localhost;Database=stagex_db;User=root;Password=;"
 3. Chạy ứng dụng:
-Mở file solution StageX.sln bằng Visual Studio.
-Đặt StageX_DesktopApp làm Startup Project.
-Nhấn Start (F5) để chạy ứng dụng.
-Tùy chọn: Để dùng tính năng quét vé qua API, chạy song song project Stagex.Api.
+- Mở file solution StageX.sln bằng Visual Studio.
+- Đặt StageX_DesktopApp làm Startup Project.
+- Nhấn Start (F5) để chạy ứng dụng.
+- Tùy chọn: Để dùng tính năng quét vé qua API, chạy song song project Stagex.Api.
 ### Tài khoản mặc định
 **Admin:**
 - User: admin
