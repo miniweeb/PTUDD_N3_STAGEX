@@ -6,7 +6,7 @@
              xmlns:util="clr-namespace:StageX_DesktopApp.Utilities"
              xmlns:vm="clr-namespace:StageX_DesktopApp.ViewModels"
              mc:Ignorable="d"
-             Background="Transparent" Foreground="White"
+             Background="Black" Foreground="White"
              d:DesignHeight="500" d:DesignWidth="800">
 
     <UserControl.DataContext>
@@ -20,6 +20,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel>
+            
             <TextBlock Text="2. QUẢN LÝ HẠNG GHẾ" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
 
             <Grid>

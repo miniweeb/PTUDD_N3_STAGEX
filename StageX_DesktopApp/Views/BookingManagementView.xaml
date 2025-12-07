@@ -18,9 +18,9 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
+        <!--Tạo row hiện Tiêu đề -->
         <TextBlock Grid.Row="0" Text="QUẢN LÝ ĐƠN HÀNG &amp; IN VÉ" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,20"/>
-
+        <!--Tạo row hiện thanh textbox tìm kiếm và button tìm kiếm -->
         <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="20" Margin="0,0,0,20">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -59,21 +59,21 @@
 
                 <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Bottom">
                     <Button Content="🔍 Lọc" Style="{StaticResource ButtonSearchStyle}" 
-                Width="80" Command="{Binding FilterCommand}"/>
+                    Width="80" Command="{Binding FilterCommand}"/>
                     <Button Content="Làm mới" Style="{StaticResource ButtonNormalStyle}" 
-            Margin="10,0,0,0" Padding="0" Width="80"
-            Command="{Binding RefreshCommand}"/>
+                    Margin="10,0,0,0" Padding="0" Width="80"
+                    Command="{Binding RefreshCommand}"/>
 
                     </StackPanel>
             </Grid>
         </Border>
-
+        <!--Tạo row hiện datagrid các đơn hàng -->
         <DataGrid Grid.Row="2" ItemsSource="{Binding Bookings}"
                   IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
                   Background="Transparent" RowBackground="#FF1E1E1E" AlternatingRowBackground="#FF252525"
                   HeadersVisibility="Column" Foreground="White" BorderThickness="0"
                   GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333">
-
+            <!--Tạo hàng đầu gồm tên các cột dữ liệu -->
             <DataGrid.Columns>
                 <DataGridTextColumn Header="MÃ ĐƠN" Binding="{Binding BookingId}" Width="80" FontWeight="Bold" ElementStyle="{StaticResource CenterCell}"/>
                 <DataGridTextColumn Header="KHÁCH HÀNG" Binding="{Binding CustomerName}" Width="1.2*" ElementStyle="{StaticResource LeftCell}"/>
@@ -125,7 +125,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-
+                <!--Tạo cột Hành động có button In vé -->
                 <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

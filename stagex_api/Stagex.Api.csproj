@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <!-- Include EF Core and Pomelo MySQL provider for database access -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />

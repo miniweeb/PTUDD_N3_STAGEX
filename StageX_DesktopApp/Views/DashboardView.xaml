@@ -21,7 +21,7 @@
             <Setter Property="Margin" Value="5"/>
         </Style>
     </UserControl.Resources>
-
+    <!--Tạo scrollview -->
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="20">
             <Grid.RowDefinitions>
@@ -30,7 +30,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-
+            <!--Tạo row hiện Tiêu đề và nút export -->
             <Grid Grid.Row="0" Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -45,7 +45,7 @@
                     </Button>
                 </StackPanel>
             </Grid>
-
+            <!--Tạo row hiện các chỉ số summary -->
             <Grid Grid.Row="1" Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -78,7 +78,7 @@
                     </StackPanel>
                 </Border>
             </Grid>
-
+            <!--Tạo row hiện biểu đồ doanh thu và biểu đồ tình trạng vé -->
             <Grid Grid.Row="2" Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.5*"/>
@@ -140,7 +140,7 @@
                     </Grid>
                 </Border>
             </Grid>
-
+            <!--Tạo row hiện biểu đồ tỉ lệ bán vé và bảng chi tiết -->
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
@@ -163,7 +163,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition/>
                         </Grid.RowDefinitions>
                         <TextBlock Text="Chi tiết Top 5 Vở diễn" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" Margin="0,0,0,10"/>
 
@@ -189,6 +189,7 @@
                     </Grid>
                 </Border>
             </Grid>
+            <!--Tạo thanh cập nhật tiến độ xuất pdf -->
             <Grid x:Name="LoadingOverlay" Visibility="Collapsed" Background="#CC000000">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="Đang xuất báo cáo PDF..." Foreground="White" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>

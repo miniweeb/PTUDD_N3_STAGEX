@@ -9,7 +9,7 @@
              d:DesignHeight="768" d:DesignWidth="1366">
 
     <UserControl.DataContext>
-        <vm:AccountViewModel />
+        <vm:AccountViewModel/>
     </UserControl.DataContext>
 
     <Grid Margin="25">
@@ -19,12 +19,14 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
+        <!--Tạo row hiện Tiêu đề -->
         <TextBlock Grid.Row="0" Text="QUẢN LÝ TÀI KHOẢN" FontSize="24" Foreground="#FFffc107" FontWeight="Bold" Margin="0,0,0,15"/>
-
-        <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="5" Padding="15" Margin="0,0,0,10">
+        <!--Tạo row hiện các textbox thêm/chỉnh sửa thông tin -->
+        <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="5" 
+                Padding="15" Margin="0,0,0,10">
             <StackPanel>
-                <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
+                <TextBlock Text="{Binding FormTitle}" FontSize="18" 
+                           FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
 
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -73,41 +75,44 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-                        <Button Content="{Binding SaveBtnContent}" Style="{StaticResource ButtonAddStyle}" Width="180" Height="32" Click="SaveButton_Click"/>
-                        <Button Content="Làm mới / Hủy" Command="{Binding ClearCommand}" Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="180" Height="32"/>
+                        <Button Content="{Binding SaveBtnContent}" Style="{StaticResource ButtonAddStyle}" 
+                                Width="180" Height="32" Click="SaveButton_Click"/>
+                        <Button Content="Làm mới / Hủy" Command="{Binding ClearCommand}" 
+                                Style="{StaticResource ButtonNormalStyle}" Margin="10,0,0,0" Width="180" Height="32"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
         </Border>
-
-        <TextBlock Grid.Row="2" Text="DANH SÁCH TÀI KHOẢN" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,20,0,10"/>
-
+        <!--Tạo row hiện tiêu đề -->
+        <TextBlock Grid.Row="2" Text="DANH SÁCH TÀI KHOẢN" FontSize="18" FontWeight="SemiBold" 
+                   Foreground="#FFffc107" Margin="0,20,0,10"/>
+        <!--Tạo row hiện datagrid các tài khoản -->
         <DataGrid Grid.Row="3" ItemsSource="{Binding Accounts}"
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-Background="Transparent" RowBackground="Transparent" 
-Foreground="White" BorderThickness="0"
-GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
-RowHeaderWidth="0" HeadersVisibility="Column"
-RowHeight="30">
-
+                  Background="Transparent" RowBackground="Transparent" 
+                  Foreground="White" BorderThickness="0"
+                  GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
+                  RowHeaderWidth="0" HeadersVisibility="Column"
+                  RowHeight="30">
+            <!--Tạo hàng đầu gồm tên các cột dữ liệu -->
             <DataGrid.Columns>
                 <DataGridTextColumn Header="TÊN TÀI KHOẢN" Binding="{Binding AccountName}" Width="*"/>
                 <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="2*"/>
                 <DataGridTextColumn Header="VAI TRÒ" Binding="{Binding Role}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
                 <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding Status}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
-
+                <!--Tạo cột Hành động gồm các button Sửa/Xóa -->
                 <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <UniformGrid Rows="1" HorizontalAlignment="Center" Width="100">
                                 <Button Content="Sửa" Style="{StaticResource ButtonEditStyle}"
-            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-            CommandParameter="{Binding}"
-            Height="28" Padding="0" Margin="0,0,3,0"/>
+                                Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                CommandParameter="{Binding}"
+                                Height="28" Padding="0" Margin="0,0,3,0"/>
                                 <Button Content="Xóa" Style="{StaticResource ButtonDeleteStyle}" 
-            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-            CommandParameter="{Binding}"
-            Height="28" Padding="0" Margin="3,0,0,0"/>
+                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                CommandParameter="{Binding}"
+                                Height="28" Padding="0" Margin="3,0,0,0"/>  
                             </UniformGrid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

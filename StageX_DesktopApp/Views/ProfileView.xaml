@@ -25,9 +25,9 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
+        <!--Hiện Tiêu đề -->
         <TextBlock Grid.Row="0" Text="Hồ sơ cá nhân" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,20"/>
-
+        <!--Tạo các TextBlock hiện thông tin tên đăng nhập và email -->
         <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="20">
             <StackPanel Orientation="Horizontal">
                 <Border Width="60" Height="60" CornerRadius="30" Background="#FFffc107" Margin="0,0,20,0">
@@ -40,7 +40,7 @@
                 </StackPanel>
             </StackPanel>
         </Border>
-
+        <!--Tạo các textbox hiển thị và cho phép thêm/chỉnh sửa thông tin -->
         <Grid Grid.Row="2" Margin="0,20,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -64,7 +64,7 @@
                 <TextBox Text="{Binding Phone}" Style="{StaticResource InputStyle}"/>
             </StackPanel>
         </Grid>
-
+        <!--Tạo các button Cập nhật/Đặt lại mật khẩu -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,25,0,0">
 
             <Button Content="Cập nhật hồ sơ" 

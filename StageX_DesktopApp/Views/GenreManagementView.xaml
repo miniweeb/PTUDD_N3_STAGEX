@@ -11,14 +11,16 @@
     <UserControl.DataContext>
         <vm:GenreViewModel />
     </UserControl.DataContext>
-
+    <!--Tạo StackPanel hiện Tiêu đề -->
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="25">
             <TextBlock Text="QUẢN LÝ THỂ LOẠI" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,20"/>
 
             <Border Background="#FF0C1220" CornerRadius="8" Padding="20" Margin="0,0,0,20">
+                <!--Tạo StackPanel hiện Tiêu đề -->
                 <StackPanel>
                     <TextBlock Text="THÔNG TIN THỂ LOẠI" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,15"/>
+                    <!--Tạo row hiện các textbox thêm/chỉnh sửa thông tin -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -44,9 +46,9 @@
                     </Grid>
                 </StackPanel>
             </Border>
-
+            <!--Tạo StackPanel hiện Tiêu đề -->
             <TextBlock Text="DANH SÁCH THỂ LOẠI" FontSize="18" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,10"/>
-
+            <!--Tạo datagrid các  -thể loại -->
             <DataGrid ItemsSource="{Binding Genres}"
                       IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
                       Background="Transparent" RowBackground="#FF1E1E1E" Foreground="White" BorderThickness="0"
@@ -66,7 +68,7 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding GenreId}" Width="50" Visibility="Collapsed"/>
                     <DataGridTextColumn Header="TÊN THỂ LOẠI" Binding="{Binding GenreName}" Width="*" ElementStyle="{StaticResource LeftCell}"/>
-
+                    <!--Tạo cột Hành động gồm các button Sửa/Xóa -->
                     <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="150">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

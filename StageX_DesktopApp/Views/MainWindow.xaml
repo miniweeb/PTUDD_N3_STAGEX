@@ -45,7 +45,7 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-
+    <!--Tạo grid phân chia thanh menu và phần chính -->
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="240"/>
@@ -55,7 +55,7 @@
         <Border Grid.Column="0" Background="#FF0C1220" CornerRadius="0,10,10,0">
             <StackPanel>
                 <TextBlock Text="StageX" Foreground="#FFffc107" FontSize="24" FontWeight="Bold" Margin="20" TextAlignment="Center"/>
-
+                <!--Hiển thị các button nếu là Admin -->
                 <StackPanel Visibility="{Binding AdminVisibility}">
                     <Button Content="Báo cáo thống kê" Command="{Binding NavigateDashboardCommand}" Style="{StaticResource MenuBtnStyle}"
                             Background="{Binding SelectedMenu, Converter={StaticResource BgConverter}, ConverterParameter='Dashboard'}"
@@ -92,7 +92,7 @@
                             Foreground="{Binding SelectedMenu, Converter={StaticResource FgConverter}, ConverterParameter='Account'}"
                             FontWeight="{Binding SelectedMenu, Converter={StaticResource FontConverter}, ConverterParameter='Account'}"/>
                 </StackPanel>
-
+                <!--Hiển thị các button nếu là Nhân viên -->
                 <StackPanel Visibility="{Binding StaffVisibility}">
                     <Button Content="Bán vé" Command="{Binding NavigateSellTicketCommand}" Style="{StaticResource MenuBtnStyle}"
                             Background="{Binding SelectedMenu, Converter={StaticResource BgConverter}, ConverterParameter='SellTicket'}"
@@ -109,13 +109,13 @@
                             Foreground="{Binding SelectedMenu, Converter={StaticResource FgConverter}, ConverterParameter='TicketScan'}"
                             FontWeight="{Binding SelectedMenu, Converter={StaticResource FontConverter}, ConverterParameter='TicketScan'}"/>
                 </StackPanel>
-
+                <!--Hiển thị các button hồ sơ cá nhân với cả 2 role -->
                 <Separator Background="#333" Margin="10,20"/>
                 <Button Content="Hồ sơ cá nhân" Command="{Binding NavigateProfileCommand}" Style="{StaticResource MenuBtnStyle}"
                         Background="{Binding SelectedMenu, Converter={StaticResource BgConverter}, ConverterParameter='Profile'}"
                         Foreground="{Binding SelectedMenu, Converter={StaticResource FgConverter}, ConverterParameter='Profile'}"
                         FontWeight="{Binding SelectedMenu, Converter={StaticResource FontConverter}, ConverterParameter='Profile'}"/>
-
+                <!--Hiển thị các button đăng xuất với cả 2 role -->
                 <Button Content="Đăng xuất" Command="{Binding LogoutCommand}" Margin="10,10,10,10" Padding="15,10" FontWeight="SemiBold" Background="#FFDC3545" Foreground="White">
                     <Button.Resources>
                         <Style TargetType="Border">
@@ -125,7 +125,7 @@
                 </Button>
             </StackPanel>
         </Border>
-
+        <!--Hiển thị các view cụ thể được chọn -->
         <Border Grid.Column="1" Background="#FF1A1A1A" Margin="10" CornerRadius="10">
             <ContentControl Content="{Binding CurrentView}" />
         </Border>

@@ -16,21 +16,14 @@
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Title -->
             <RowDefinition Height="Auto"/>
-            <!-- Form -->
             <RowDefinition Height="Auto"/>
-            <!-- Search -->
             <RowDefinition Height="Auto"/>
-            <!-- List Title -->
             <RowDefinition Height="*"/>
-            <!-- Table -->
         </Grid.RowDefinitions>
-
-        <!-- 1. TITLE -->
+        <!--Tạo row hiện Tiêu đề -->
         <TextBlock Grid.Row="0" Text="QUẢN LÝ DIỄN VIÊN" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" Margin="0,0,0,15"/>
-
-        <!-- 2. FORM NHẬP LIỆU (Dàn ngang) -->
+        <!--Tạo row hiện các textbox thêm/chỉnh sửa thông tin -->
         <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="15" Margin="0,0,0,15">
             <Grid>
                 <Grid.RowDefinitions>
@@ -39,7 +32,6 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Dòng 1: Thông tin cá nhân -->
                 <Grid Grid.Row="0" Margin="0,0,0,15">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.5*"/>
@@ -126,7 +118,7 @@
             </Grid>
         </Border>
 
-        <!-- 3. SEARCH BAR -->
+        <!--Tạo row hiện thanh textbox tìm kiếm và button tìm kiếm -->
         <Border Grid.Row="2" Background="#FF0C1220" Padding="8" Margin="0,0,0,10" CornerRadius="5">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -143,10 +135,9 @@
             </Grid>
         </Border>
 
-        <!-- 4. LIST TITLE -->
+        <!--Tạo row hiện tiêu đề -->
         <TextBlock Grid.Row="3" Text="DANH SÁCH DIỄN VIÊN" FontSize="16" FontWeight="SemiBold" Foreground="#FFffc107" Margin="0,0,0,10"/>
-
-        <!-- 5. DATAGRID (Cân đối) -->
+        <!--Tạo row hiện datagrid các diễn viên -->
         <DataGrid Grid.Row="4" ItemsSource="{Binding Actors}" 
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                   Background="Transparent" RowBackground="Transparent" 
@@ -154,7 +145,7 @@
                   GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
                   RowHeaderWidth="0" HeadersVisibility="Column"
                   RowHeight="31">
-            
+            <!--Tạo hàng đầu gồm tên các cột dữ liệu -->
             <DataGrid.Columns>
                 <!-- Họ tên: Căn trái -->
                 <DataGridTextColumn Header="HỌ TÊN" Binding="{Binding FullName}" Width="1.5*" ElementStyle="{StaticResource LeftCell}"/>
@@ -203,7 +194,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Hành động -->
+                <!--Tạo cột Hành động gồm các button Sửa/Xóa -->
                 <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
