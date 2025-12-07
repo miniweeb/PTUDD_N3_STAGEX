@@ -215,7 +215,7 @@ namespace StageX_DesktopApp.ViewModels
                 {
                     labels.Add(item.period);
                     sold.Add((double)item.sold_tickets);
-                    unsold.Add((double)item.sold_tickets * 0.3);
+                    unsold.Add((double)item.unsold_tickets);
                 }
             }
             else if (filter == "month")
@@ -228,9 +228,14 @@ namespace StageX_DesktopApp.ViewModels
                     int weekNum = currentWeek - i;
                     if (weekNum <= 0) weekNum += 52;
                     string key = $"Tuần {weekNum}";
+
                     var item = data.FirstOrDefault(x => x.period == key);
                     double s = item != null ? (double)item.sold_tickets : 0;
-                    labels.Add(key); sold.Add(s); unsold.Add(s > 0 ? s * 0.4 : 0);
+                    double u = item != null ? (double)item.unsold_tickets : 0; // SỬA: Lấy số liệu thật
+
+                    labels.Add(key);
+                    sold.Add(s);
+                    unsold.Add(u); // SỬA: Add biến u
                 }
             }
             else // week
@@ -240,9 +245,14 @@ namespace StageX_DesktopApp.ViewModels
                 {
                     var d = anchorDate.AddDays(-i);
                     string key = d.ToString("dd/MM", culture);
+
                     var item = data.FirstOrDefault(x => x.period == key);
                     double s = item != null ? (double)item.sold_tickets : 0;
-                    labels.Add(key); sold.Add(s); unsold.Add(s > 0 ? s * 0.5 : 0);
+                    double u = item != null ? (double)item.unsold_tickets : 0; // SỬA: Lấy số liệu thật
+
+                    labels.Add(key);
+                    sold.Add(s);
+                    unsold.Add(u); // SỬA: Add biến u
                 }
             }
 
