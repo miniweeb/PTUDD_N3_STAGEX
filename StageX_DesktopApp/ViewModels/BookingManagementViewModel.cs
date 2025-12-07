@@ -11,85 +11,60 @@ using System.Windows;
 
 namespace StageX_DesktopApp.ViewModels
 {
-    // Class chứa thông tin chi tiết của từng tấm vé để phục vụ việc IN VÉ ra PDF
-    // DTO (Data Transfer Object) này giúp gom nhóm dữ liệu cần thiết từ nhiều nguồn (Ticket, Seat, Performance...)
-    public class TicketPrintInfo
-    {
-        public string SeatLabel { get; set; }
-        public decimal Price { get; set; }
-        public string TicketCode { get; set; }
-    }
-    // Class đại diện cho một dòng dữ liệu hiển thị trên bảng Đơn hàng (DataGrid)
-    public class BookingDisplayItem
-    {
-        public int BookingId { get; set; }
-        public string CustomerName { get; set; }
-        public string CreatorName { get; set; }
-        public string ShowTitle { get; set; }
-        public string TheaterName { get; set; }
-        public DateTime PerformanceTime { get; set; }
-        public decimal TotalAmount { get; set; }
-        public string Status { get; set; }
-        public string SeatList { get; set; }
-        public DateTime CreatedAt { get; set; }
-
-  
-        public List<TicketPrintInfo> TicketDetails { get; set; } = new();
-    }
-    // ViewModel chính cho màn hình Quản lý Đơn hàng
     public partial class BookingManagementViewModel : ObservableObject
     {
         private readonly DatabaseService _dbService;
-        // Danh sách gốc chứa toàn bộ dữ liệu tải từ DB về (dùng để Cache)
+
+        // Danh sách gốc (Cache): Lưu toàn bộ dữ liệu lấy từ DB. 
+        // Khi lọc, ta sẽ query trên list này để tránh gọi lại DB nhiều lần.
         private List<BookingDisplayItem> _allBookings;
-        // Danh sách hiển thị trên giao diện (đã qua lọc/tìm kiếm)
-        // ObservableCollection giúp giao diện tự cập nhật khi danh sách thay đổi
-        [ObservableProperty] private ObservableCollection<BookingDisplayItem> _bookings;
-        // --- CÁC BIẾN BỘ LỌC (BINDING VỚI UI) ---
-        [ObservableProperty] private string _searchKeyword;
-        [ObservableProperty] private int _statusIndex = 0;
-        [ObservableProperty] private DateTime? _selectedDate;
+
+        // Danh sách hiển thị: DataGrid sẽ binding vào biến này.
+        [ObservableProperty]
+        private ObservableCollection<BookingDisplayItem> _bookings;
+
+        // --- CÁC BIẾN BINDING VỚI BỘ LỌC UI ---
+
+        // Từ khóa tìm kiếm (Mã đơn, Tên khách...)
+        [ObservableProperty]
+        private string _searchKeyword;
+
+        // Index của ComboBox trạng thái (0: Tất cả, 1: Đang xử lý...)
+        [ObservableProperty]
+        private int _statusIndex = 0;
+
+        // Ngày được chọn (Nullable - có thể null nếu chọn "Tất cả ngày")
+        [ObservableProperty]
+        private DateTime? _selectedDate;
+
+        // --- SỰ KIỆN (EVENTS) ---
+
+        // Event báo hiệu cho View biết cần in vé.
+        // ViewModel không nên trực tiếp thao tác UI/Printer, nên dùng event để View xử lý.
         public event Action<BookingDisplayItem> RequestPrintTicket;
 
         public BookingManagementViewModel()
         {
             _dbService = new DatabaseService();
+
+            // Gọi lệnh tải dữ liệu ngay khi ViewModel được tạo
             LoadDataCommand.Execute(null);
         }
 
-        // Command: Tải dữ liệu từ Database
         [RelayCommand]
         private async Task LoadData()
         {
             try
             {
-                // 1. Gọi Service lấy danh sách Booking (kèm chi tiết Ticket, Seat...)
+                // 1. Gọi Service lấy danh sách Booking (Entity) từ CSDL
+                // Hàm này đã bao gồm các lệnh .Include() để lấy dữ liệu liên kết (User, Tickets, Seats...)
                 var rawList = await _dbService.GetBookingsAsync();
-                // 2. Chuyển đổi (Map) từ Model gốc (Booking) sang Model hiển thị (BookingDisplayItem)
-                // Sử dụng LINQ Select để projection dữ liệu
-                _allBookings = rawList.Select(b => new BookingDisplayItem
-                {
-                    BookingId = b.BookingId,
-                    CustomerName = b.User != null ? (b.User.UserDetail?.FullName ?? b.User.Email) : "",
-                    CreatorName = b.User != null ? "Online" : (b.CreatedByUser != null ? (b.CreatedByUser.UserDetail?.FullName ?? b.CreatedByUser.AccountName) : "—"),
-                    ShowTitle = b.Performance?.Show?.Title ?? "",
-                    TheaterName = b.Performance?.Theater?.Name ?? "",
-                    PerformanceTime = (b.Performance?.PerformanceDate ?? DateTime.MinValue).Add(b.Performance?.StartTime ?? TimeSpan.Zero),
-                    TotalAmount = b.TotalAmount,
-                    Status = b.Status,
-                    CreatedAt = b.CreatedAt,
-                    SeatList = string.Join(", ", b.Tickets.Select(t => $"{t.Seat?.RowChar}{t.Seat?.SeatNumber}")),
 
-                    // Tính toán chi tiết từng vé để in
-                    TicketDetails = b.Tickets.Select(t => new TicketPrintInfo
-                    {
-                        SeatLabel = $"{t.Seat?.RowChar}{t.Seat?.SeatNumber}",
-                        // Công thức: Giá vé = Giá suất diễn + Giá hạng ghế (nếu có)
-                        Price = (b.Performance?.Price ?? 0) + (t.Seat?.SeatCategory?.BasePrice ?? 0),
-                        TicketCode = t.TicketCode.ToString()
-                    }).ToList()
+                // 2. Chuyển đổi (Mapping) từ Entity sang DTO (Data Transfer Object)
+                // Sử dụng Constructor của BookingDisplayItem để tự xử lý logic map dữ liệu.
+                // Cách này giúp code ViewModel gọn gàng, dễ đọc.
+                _allBookings = rawList.Select(b => new BookingDisplayItem(b)).ToList();
 
-                }).ToList();
                 // 3. Gọi hàm Filter để áp dụng các bộ lọc hiện tại (nếu có) lên danh sách vừa tải
                 Filter();
             }
@@ -98,70 +73,77 @@ namespace StageX_DesktopApp.ViewModels
                 MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
             }
         }
-
-        // Command: Lọc dữ liệu (được gọi khi gõ text, chọn ngày, chọn trạng thái)
+        
+        // Command: Lọc dữ liệu (Được gọi khi người dùng gõ phím, chọn ngày, chọn trạng thái).
         [RelayCommand]
         private void Filter()
         {
+            // Nếu chưa có dữ liệu gốc thì thoát
             if (_allBookings == null) return;
 
+            // Bắt đầu từ danh sách gốc
             var query = _allBookings.AsEnumerable();
-            // 1. Lọc theo từ khóa (Mã đơn hoặc Tên khách)
+
+            // 1. Lọc theo từ khóa (SearchKeyword)
+            // Tìm kiếm trên nhiều trường: Mã đơn, Tên khách, Người lập, Tên vở diễn
             if (!string.IsNullOrWhiteSpace(SearchKeyword))
             {
                 string k = SearchKeyword.ToLower();
                 query = query.Where(x =>
-            x.BookingId.ToString().Contains(k) ||           // Tìm theo Mã đơn
-            x.CustomerName.ToLower().Contains(k) ||         // Tìm theo Tên khách
-            (x.CreatorName != null && x.CreatorName.ToLower().Contains(k)) || // Tìm theo Người lập
-            (x.ShowTitle != null && x.ShowTitle.ToLower().Contains(k))        // Tìm theo Tên vở diễn
-        );
+                    x.BookingId.ToString().Contains(k) ||           // Tìm theo Mã đơn
+                    x.CustomerName.ToLower().Contains(k) ||         // Tìm theo Tên khách
+                    (x.CreatorName != null && x.CreatorName.ToLower().Contains(k)) || // Tìm theo Người lập
+                    (x.ShowTitle != null && x.ShowTitle.ToLower().Contains(k))        // Tìm theo Tên vở diễn
+                );
             }
-            // 2. Lọc theo Trạng thái (dựa vào index của ComboBox)
+
+            // 2. Lọc theo Trạng thái (Dựa vào index ComboBox)
             string statusFilter = StatusIndex switch
             {
                 1 => "Đang xử lý",
                 2 => "Đã hoàn thành",
                 3 => "Đã hủy",
-                _ => ""
+                _ => "" // Index 0 hoặc khác: Không lọc
             };
 
             if (!string.IsNullOrEmpty(statusFilter))
             {
+                // Xử lý đặc biệt cho trạng thái "Đã hoàn thành" (Gộp nhiều trạng thái con từ DB)
                 if (statusFilter == "Đã hoàn thành")
                     query = query.Where(x => x.Status == "Đã hoàn thành" || x.Status == "Thành công" || x.Status == "Đã thanh toán POS");
                 else
                     query = query.Where(x => x.Status == statusFilter);
             }
-            // 3. Lọc theo Ngày tạo (nếu người dùng đã chọn ngày)
+
+            // 3. Lọc theo Ngày tạo (Nếu người dùng đã chọn ngày)
             if (SelectedDate.HasValue)
             {
-                // So sánh phần ngày (Date) bỏ qua phần giờ
+                // Chỉ so sánh phần Ngày (Date), bỏ qua phần Giờ
                 query = query.Where(x => x.CreatedAt.Date == SelectedDate.Value.Date);
             }
-            // Cập nhật kết quả lọc ra ObservableCollection để View hiển thị
+
+            // Cập nhật kết quả lọc vào biến Bookings để UI tự động hiển thị lại
             Bookings = new ObservableCollection<BookingDisplayItem>(query);
         }
-        // Command: Làm mới (Refresh)
-        // Xóa sạch bộ lọc và tải lại dữ liệu mới nhất từ Server
+
+        // Command: Làm mới (Refresh).
         [RelayCommand]
         private async Task Refresh()
         {
-            // Xóa sạch các điều kiện lọc trên giao diện
+            // Reset các biến điều khiển trên giao diện về mặc định
             SearchKeyword = "";
-            StatusIndex = 0;      // Về "-- Tất cả --"
+            StatusIndex = 0;      // Về mục "-- Tất cả --"
             SelectedDate = null;  // Xóa chọn ngày
 
+            // Tải lại dữ liệu
             await LoadData();
         }
 
-        // Command: In vé
-        // Được gọi khi nhấn nút "In vé" trên từng dòng
+        // Command: In vé.
         [RelayCommand]
         private void PrintTicket(BookingDisplayItem item)
         {
-            // Command: In vé
-            // Được gọi khi nhấn nút "In vé" trên từng dòng
+            // Kích hoạt sự kiện để View (Code-behind) thực hiện logic tạo PDF và in
             if (item != null) RequestPrintTicket?.Invoke(item);
         }
     }
