@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Dec 08, 2025 at 10:29 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Máy chủ: 127.0.0.1
+-- Thời gian đã tạo: Th12 08, 2025 lúc 10:51 AM
+-- Phiên bản máy phục vụ: 10.4.32-MariaDB
+-- Phiên bản PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,12 +18,12 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `stagex_db`
+-- Cơ sở dữ liệu: `stagex_db`
 --
 
 DELIMITER $$
 --
--- Procedures
+-- Thủ tục
 --
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_active_shows` ()   BEGIN
     -- Cập nhật trạng thái suất diễn và vở diễn trước khi lấy dữ liệu
@@ -182,12 +182,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_performance` (IN `in_sh
     WHERE s.theater_id = in_theater_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_review` (IN `in_show_id` INT, IN `in_user_id` INT, IN `in_rating` INT, IN `in_content` TEXT)   BEGIN
-    INSERT INTO reviews (show_id, user_id, rating, content, created_at)
-    VALUES (in_show_id, in_user_id, in_rating, in_content, NOW());
-    SELECT LAST_INSERT_ID() AS review_id;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_seat_category` (IN `in_name` VARCHAR(100), IN `in_base_price` DECIMAL(10,3), IN `in_color_class` VARCHAR(50))   BEGIN
     INSERT INTO seat_categories (category_name, base_price, color_class)
     VALUES (in_name, in_base_price, in_color_class);
@@ -285,10 +279,6 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_performance_if_ended` (IN `in_performance_id` INT)   BEGIN
     DELETE FROM performances
     WHERE performance_id = in_performance_id AND status = 'Đã kết thúc';
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_review` (IN `in_review_id` INT)   BEGIN
-    DELETE FROM reviews WHERE review_id = in_review_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_seats_by_theater` (IN `in_theater_id` INT)   BEGIN
@@ -394,15 +384,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_performances_detailed`
     ORDER BY p.performance_date, p.start_time;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_reviews` ()   BEGIN
- 
-    SELECT r.*, r.show_id AS show_id, u.account_name AS account_name, s.title
-    FROM reviews r
-    JOIN users u ON r.user_id = u.user_id
-    JOIN shows s ON r.show_id = s.show_id
-    ORDER BY r.created_at DESC;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_seat_categories` ()   BEGIN
     SELECT * FROM seat_categories ORDER BY category_id;
 END$$
@@ -419,12 +400,6 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_theaters` ()   BEGIN
 
     SELECT * FROM theaters ORDER BY theater_id ASC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_average_rating_by_show` (IN `in_show_id` INT)   BEGIN
-    SELECT AVG(rating) AS avg_rating
-    FROM reviews
-    WHERE show_id = in_show_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_booked_seat_ids` (IN `in_performance_id` INT)   BEGIN
@@ -464,15 +439,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_genre_ids_by_show` (IN `in
     WHERE show_id = in_show_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_latest_reviews` (IN `in_limit` INT)   BEGIN
-    SELECT r.*, u.account_name AS account_name, s.title AS show_title
-    FROM reviews r
-    JOIN users u ON r.user_id = u.user_id
-    JOIN shows s ON r.show_id = s.show_id
-    ORDER BY r.created_at DESC
-    LIMIT in_limit;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_payments_by_booking` (IN `in_booking_id` INT)   BEGIN
     SELECT * FROM payments WHERE booking_id = in_booking_id ORDER BY created_at ASC;
 END$$
@@ -503,15 +469,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_performance_detailed_by_id
     JOIN shows s ON p.show_id = s.show_id
     JOIN theaters t ON p.theater_id = t.theater_id
     WHERE p.performance_id = in_performance_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_reviews_by_show` (IN `in_show_id` INT)   BEGIN
-  
-    SELECT r.*, u.account_name AS account_name
-    FROM reviews r
-    JOIN users u ON r.user_id = u.user_id
-    WHERE r.show_id = in_show_id
-    ORDER BY r.created_at DESC;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_seats_for_theater` (IN `in_theater_id` INT)   BEGIN
@@ -663,13 +620,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_performances_by_show` (IN `in_
     FROM performances
     WHERE show_id = in_show_id
       AND status = 'Đang mở bán';
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_rating_distribution` ()   BEGIN
-    SELECT rating as star, COUNT(*) as rating_count
-    FROM reviews
-    GROUP BY rating
-    ORDER BY rating;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_revenue_monthly` ()   BEGIN
@@ -1081,7 +1031,7 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Table structure for table `actors`
+-- Cấu trúc bảng cho bảng `actors`
 --
 
 CREATE TABLE `actors` (
@@ -1097,7 +1047,7 @@ CREATE TABLE `actors` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `actors`
+-- Đang đổ dữ liệu cho bảng `actors`
 --
 
 INSERT INTO `actors` (`actor_id`, `full_name`, `date_of_birth`, `gender`, `nick_name`, `email`, `phone`, `status`, `created_at`) VALUES
@@ -1115,7 +1065,7 @@ INSERT INTO `actors` (`actor_id`, `full_name`, `date_of_birth`, `gender`, `nick_
 -- --------------------------------------------------------
 
 --
--- Table structure for table `bookings`
+-- Cấu trúc bảng cho bảng `bookings`
 --
 
 CREATE TABLE `bookings` (
@@ -1129,7 +1079,7 @@ CREATE TABLE `bookings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `bookings`
+-- Đang đổ dữ liệu cho bảng `bookings`
 --
 
 INSERT INTO `bookings` (`booking_id`, `user_id`, `performance_id`, `total_amount`, `booking_status`, `created_at`, `created_by`) VALUES
@@ -1510,12 +1460,53 @@ INSERT INTO `bookings` (`booking_id`, `user_id`, `performance_id`, `total_amount
 (375, NULL, 69, 400000.000, 'Đã hoàn thành', '2025-11-20 14:55:11', 11),
 (376, NULL, 70, 750000.000, 'Đã hoàn thành', '2025-12-01 09:18:33', 6),
 (377, NULL, 70, 600000.000, 'Đã hoàn thành', '2025-12-01 15:29:11', 11),
-(378, NULL, 70, 450000.000, 'Đã hoàn thành', '2025-12-02 10:44:55', 12);
+(378, NULL, 70, 450000.000, 'Đã hoàn thành', '2025-12-02 10:44:55', 12),
+(387, NULL, 70, 700000.000, 'Đã hoàn thành', '2025-12-08 09:41:15', 1),
+(388, NULL, 70, 700000.000, 'Đã hoàn thành', '2025-12-08 09:41:27', 1),
+(389, NULL, 72, 600000.000, 'Đã hoàn thành', '2025-12-08 09:41:51', 1),
+(390, NULL, 72, 450000.000, 'Đã hoàn thành', '2025-12-08 09:42:01', 1),
+(391, NULL, 72, 675000.000, 'Đã hoàn thành', '2025-12-08 09:42:14', 1),
+(392, NULL, 72, 300000.000, 'Đã hoàn thành', '2025-12-08 09:42:28', 1),
+(393, NULL, 72, 450000.000, 'Đã hoàn thành', '2025-12-08 09:42:36', 1),
+(394, NULL, 76, 800000.000, 'Đã hoàn thành', '2025-12-08 09:46:20', 1),
+(395, NULL, 76, 1200000.000, 'Đã hoàn thành', '2025-12-08 09:46:31', 1),
+(396, NULL, 76, 800000.000, 'Đã hoàn thành', '2025-12-08 09:46:38', 1),
+(397, NULL, 76, 1200000.000, 'Đã hoàn thành', '2025-12-08 09:46:48', 1),
+(398, NULL, 76, 975000.000, 'Đã hoàn thành', '2025-12-08 09:47:01', 1),
+(399, NULL, 76, 650000.000, 'Đã hoàn thành', '2025-12-08 09:47:12', 1),
+(400, NULL, 76, 750000.000, 'Đã hoàn thành', '2025-12-08 09:47:20', 1),
+(401, NULL, 76, 750000.000, 'Đã hoàn thành', '2025-12-08 09:47:30', 1),
+(402, NULL, 76, 500000.000, 'Đã hoàn thành', '2025-12-08 09:47:35', 1),
+(403, NULL, 76, 750000.000, 'Đã hoàn thành', '2025-12-08 09:47:45', 1),
+(404, NULL, 74, 700000.000, 'Đã hoàn thành', '2025-12-08 09:47:58', 1),
+(405, NULL, 74, 560000.000, 'Đã hoàn thành', '2025-12-08 09:48:05', 1),
+(406, NULL, 74, 600000.000, 'Đã hoàn thành', '2025-12-08 09:48:14', 1),
+(407, NULL, 74, 600000.000, 'Đã hoàn thành', '2025-12-08 09:48:22', 1),
+(408, NULL, 74, 560000.000, 'Đã hoàn thành', '2025-12-08 09:48:30', 1),
+(409, NULL, 74, 700000.000, 'Đã hoàn thành', '2025-12-08 09:48:39', 1),
+(410, NULL, 77, 600000.000, 'Đã hoàn thành', '2025-12-08 09:48:57', 1),
+(411, NULL, 77, 600000.000, 'Đã hoàn thành', '2025-12-08 09:49:00', 1),
+(412, NULL, 77, 600000.000, 'Đã hoàn thành', '2025-12-08 09:49:05', 1),
+(413, NULL, 77, 600000.000, 'Đã hoàn thành', '2025-12-08 09:49:10', 1),
+(414, NULL, 77, 675000.000, 'Đã hoàn thành', '2025-12-08 09:49:23', 1),
+(415, NULL, 77, 600000.000, 'Đã hoàn thành', '2025-12-07 09:49:31', 1),
+(416, NULL, 77, 600000.000, 'Đã hoàn thành', '2025-12-07 09:49:35', 1),
+(417, NULL, 75, 600000.000, 'Đã hoàn thành', '2025-12-07 09:49:51', 1),
+(418, NULL, 75, 900000.000, 'Đã hoàn thành', '2025-12-07 09:49:57', 1),
+(419, NULL, 75, 900000.000, 'Đã hoàn thành', '2025-12-07 09:50:05', 1),
+(420, NULL, 75, 600000.000, 'Đã hoàn thành', '2025-12-07 09:50:12', 1),
+(421, NULL, 75, 450000.000, 'Đã hoàn thành', '2025-12-07 09:50:20', 1),
+(422, NULL, 75, 450000.000, 'Đã hoàn thành', '2025-12-07 09:50:24', 1),
+(423, NULL, 75, 450000.000, 'Đã hoàn thành', '2025-12-07 09:50:29', 1),
+(424, NULL, 75, 450000.000, 'Đã hoàn thành', '2025-12-07 09:50:33', 1),
+(425, NULL, 75, 300000.000, 'Đã hoàn thành', '2025-12-07 09:50:38', 1),
+(426, NULL, 75, 300000.000, 'Đã hoàn thành', '2025-12-07 09:50:42', 1),
+(427, NULL, 75, 150000.000, 'Đã hoàn thành', '2025-12-07 09:50:45', 1);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `genres`
+-- Cấu trúc bảng cho bảng `genres`
 --
 
 CREATE TABLE `genres` (
@@ -1525,7 +1516,7 @@ CREATE TABLE `genres` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `genres`
+-- Đang đổ dữ liệu cho bảng `genres`
 --
 
 INSERT INTO `genres` (`genre_id`, `genre_name`, `created_at`) VALUES
@@ -1547,7 +1538,7 @@ INSERT INTO `genres` (`genre_id`, `genre_name`, `created_at`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `payments`
+-- Cấu trúc bảng cho bảng `payments`
 --
 
 CREATE TABLE `payments` (
@@ -1564,7 +1555,7 @@ CREATE TABLE `payments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `payments`
+-- Đang đổ dữ liệu cho bảng `payments`
 --
 
 INSERT INTO `payments` (`payment_id`, `booking_id`, `amount`, `status`, `payment_method`, `vnp_txn_ref`, `vnp_bank_code`, `vnp_pay_date`, `created_at`, `updated_at`) VALUES
@@ -1945,12 +1936,53 @@ INSERT INTO `payments` (`payment_id`, `booking_id`, `amount`, `status`, `payment
 (390, 375, 400000.000, 'Thành công', 'Chuyển khoản', NULL, NULL, NULL, '2025-11-20 14:55:11', '2025-11-20 14:55:11'),
 (391, 376, 750000.000, 'Thành công', 'Tiền mặt', NULL, NULL, NULL, '2025-12-01 09:18:33', '2025-12-01 09:18:33'),
 (392, 377, 600000.000, 'Thành công', 'Chuyển khoản', NULL, NULL, NULL, '2025-12-01 15:29:11', '2025-12-01 15:29:11'),
-(393, 378, 450000.000, 'Thành công', 'Tiền mặt', NULL, NULL, NULL, '2025-12-02 10:44:55', '2025-12-02 10:44:55');
+(393, 378, 450000.000, 'Thành công', 'Tiền mặt', NULL, NULL, NULL, '2025-12-02 10:44:55', '2025-12-02 10:44:55'),
+(394, 387, 700000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:41:15', '2025-12-08 09:41:15'),
+(395, 388, 700000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:41:27', '2025-12-08 09:41:27'),
+(396, 389, 600000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:41:51', '2025-12-08 09:41:51'),
+(397, 390, 450000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:42:01', '2025-12-08 09:42:01'),
+(398, 391, 675000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:42:14', '2025-12-08 09:42:14'),
+(399, 392, 300000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:42:28', '2025-12-08 09:42:28'),
+(400, 393, 450000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:42:36', '2025-12-08 09:42:36'),
+(401, 394, 800000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:46:20', '2025-12-08 09:46:20'),
+(402, 395, 1200000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:46:31', '2025-12-08 09:46:31'),
+(403, 396, 800000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:46:38', '2025-12-08 09:46:38'),
+(404, 397, 1200000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:46:48', '2025-12-08 09:46:48'),
+(405, 398, 975000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:47:01', '2025-12-08 09:47:01'),
+(406, 399, 650000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:47:12', '2025-12-08 09:47:12'),
+(407, 400, 750000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:47:20', '2025-12-08 09:47:20'),
+(408, 401, 750000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:47:30', '2025-12-08 09:47:30'),
+(409, 402, 500000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:47:35', '2025-12-08 09:47:35'),
+(410, 403, 750000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:47:45', '2025-12-08 09:47:45'),
+(411, 404, 700000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:47:58', '2025-12-08 09:47:58'),
+(412, 405, 560000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-08 09:48:05', '2025-12-08 09:48:05'),
+(413, 406, 600000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:48:14', '2025-12-08 09:48:14'),
+(414, 407, 600000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-08 09:48:22', '2025-12-08 09:48:22'),
+(415, 408, 560000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:48:30', '2025-12-07 09:48:30'),
+(416, 409, 700000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:48:39', '2025-12-07 09:48:39'),
+(417, 410, 600000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:48:57', '2025-12-07 09:48:57'),
+(418, 411, 600000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:49:00', '2025-12-07 09:49:00'),
+(419, 412, 600000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-07 09:49:05', '2025-12-07 09:49:05'),
+(420, 413, 600000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-07 09:49:10', '2025-12-07 09:49:10'),
+(421, 414, 675000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:49:23', '2025-12-07 09:49:23'),
+(422, 415, 600000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:49:31', '2025-12-07 09:49:31'),
+(423, 416, 600000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:49:35', '2025-12-07 09:49:35'),
+(424, 417, 600000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:49:51', '2025-12-07 09:49:51'),
+(425, 418, 900000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-07 09:49:57', '2025-12-07 09:49:57'),
+(426, 419, 900000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:50:05', '2025-12-07 09:50:05'),
+(427, 420, 600000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:50:12', '2025-12-07 09:50:12'),
+(428, 421, 450000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:50:20', '2025-12-07 09:50:20'),
+(429, 422, 450000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:50:24', '2025-12-07 09:50:24'),
+(430, 423, 450000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:50:29', '2025-12-07 09:50:29'),
+(431, 424, 450000.000, 'Thành công', 'Tiền mặt', 'POS', NULL, NULL, '2025-12-07 09:50:33', '2025-12-07 09:50:33'),
+(432, 425, 300000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-07 09:50:38', '2025-12-07 09:50:38'),
+(433, 426, 300000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-07 09:50:42', '2025-12-07 09:50:42'),
+(434, 427, 150000.000, 'Thành công', 'Chuyển khoản', 'POS', NULL, NULL, '2025-12-07 09:50:45', '2025-12-07 09:50:45');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `performances`
+-- Cấu trúc bảng cho bảng `performances`
 --
 
 CREATE TABLE `performances` (
@@ -1967,7 +1999,7 @@ CREATE TABLE `performances` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `performances`
+-- Đang đổ dữ liệu cho bảng `performances`
 --
 
 INSERT INTO `performances` (`performance_id`, `show_id`, `theater_id`, `performance_date`, `start_time`, `end_time`, `status`, `price`, `created_at`, `updated_at`) VALUES
@@ -2042,27 +2074,16 @@ INSERT INTO `performances` (`performance_id`, `show_id`, `theater_id`, `performa
 (69, 13, 3, '2025-12-05', '14:00:00', '15:35:00', 'Đã kết thúc', 120000, '2025-10-25 09:00:00', '2025-12-07 11:30:19'),
 (70, 11, 2, '2025-12-15', '19:30:00', '21:50:00', 'Đang mở bán', 200000, '2025-10-25 09:00:00', '2025-10-25 09:00:00'),
 (71, 17, 1, '2025-12-15', '14:00:00', NULL, 'Đã hủy', 150000, '2025-10-25 09:00:00', '2025-12-01 11:48:59'),
-(72, 13, 1, '2025-12-15', '19:30:00', '21:05:00', 'Đang mở bán', 150000, '2025-10-25 09:00:00', '2025-10-25 09:00:00');
+(72, 13, 1, '2025-12-15', '19:30:00', '21:05:00', 'Đang mở bán', 150000, '2025-10-25 09:00:00', '2025-10-25 09:00:00'),
+(74, 19, 7, '2025-12-15', '19:00:00', '20:45:00', 'Đang mở bán', 200000, '2025-12-08 09:44:40', '2025-12-08 09:44:40'),
+(75, 13, 1, '2025-12-30', '19:00:00', '20:35:00', 'Đang mở bán', 150000, '2025-12-08 09:44:56', '2025-12-08 09:44:56'),
+(76, 18, 1, '2025-12-15', '10:00:00', '11:40:00', 'Đang mở bán', 250000, '2025-12-08 09:45:25', '2025-12-08 09:45:25'),
+(77, 12, 2, '2025-12-30', '10:00:00', '11:44:00', 'Đang mở bán', 150000, '2025-12-08 09:45:46', '2025-12-08 09:45:46');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `reviews`
---
-
-CREATE TABLE `reviews` (
-  `review_id` int(11) NOT NULL,
-  `show_id` int(11) DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `rating` int(11) DEFAULT NULL CHECK (`rating` >= 1 and `rating` <= 5),
-  `content` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `seats`
+-- Cấu trúc bảng cho bảng `seats`
 --
 
 CREATE TABLE `seats` (
@@ -2076,7 +2097,7 @@ CREATE TABLE `seats` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `seats`
+-- Đang đổ dữ liệu cho bảng `seats`
 --
 
 INSERT INTO `seats` (`seat_id`, `theater_id`, `category_id`, `row_char`, `seat_number`, `real_seat_number`, `created_at`) VALUES
@@ -2224,7 +2245,7 @@ INSERT INTO `seats` (`seat_id`, `theater_id`, `category_id`, `row_char`, `seat_n
 -- --------------------------------------------------------
 
 --
--- Table structure for table `seat_categories`
+-- Cấu trúc bảng cho bảng `seat_categories`
 --
 
 CREATE TABLE `seat_categories` (
@@ -2235,7 +2256,7 @@ CREATE TABLE `seat_categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `seat_categories`
+-- Đang đổ dữ liệu cho bảng `seat_categories`
 --
 
 INSERT INTO `seat_categories` (`category_id`, `category_name`, `base_price`, `color_class`) VALUES
@@ -2248,7 +2269,7 @@ INSERT INTO `seat_categories` (`category_id`, `category_name`, `base_price`, `co
 -- --------------------------------------------------------
 
 --
--- Table structure for table `seat_performance`
+-- Cấu trúc bảng cho bảng `seat_performance`
 --
 
 CREATE TABLE `seat_performance` (
@@ -2258,7 +2279,7 @@ CREATE TABLE `seat_performance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `seat_performance`
+-- Đang đổ dữ liệu cho bảng `seat_performance`
 --
 
 INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
@@ -5120,16 +5141,16 @@ INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
 (68, 70, 'trống'),
 (69, 70, 'trống'),
 (70, 70, 'trống'),
-(71, 70, 'trống'),
+(71, 70, 'đã đặt'),
 (72, 70, 'trống'),
-(73, 70, 'trống'),
+(73, 70, 'đã đặt'),
 (74, 70, 'trống'),
-(75, 70, 'trống'),
+(75, 70, 'đã đặt'),
 (76, 70, 'trống'),
 (107, 70, 'đã đặt'),
 (108, 70, 'trống'),
 (109, 70, 'đã đặt'),
-(110, 70, 'trống'),
+(110, 70, 'đã đặt'),
 (111, 70, 'đã đặt'),
 (112, 70, 'trống'),
 (113, 70, 'đã đặt'),
@@ -5165,8 +5186,7 @@ INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
 (29, 71, 'trống'),
 (30, 71, 'trống'),
 (31, 71, 'trống'),
-(32, 71, 'trống');
-INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
+(32, 71, 'trống'),
 (33, 71, 'trống'),
 (34, 71, 'trống'),
 (35, 71, 'trống'),
@@ -5203,31 +5223,31 @@ INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
 (14, 72, 'trống'),
 (15, 72, 'đã đặt'),
 (16, 72, 'trống'),
-(17, 72, 'trống'),
+(17, 72, 'đã đặt'),
 (18, 72, 'trống'),
-(19, 72, 'trống'),
+(19, 72, 'đã đặt'),
 (20, 72, 'trống'),
-(21, 72, 'trống'),
+(21, 72, 'đã đặt'),
 (22, 72, 'trống'),
-(23, 72, 'trống'),
+(23, 72, 'đã đặt'),
 (24, 72, 'trống'),
-(25, 72, 'trống'),
+(25, 72, 'đã đặt'),
 (26, 72, 'trống'),
-(27, 72, 'trống'),
+(27, 72, 'đã đặt'),
 (28, 72, 'trống'),
-(29, 72, 'trống'),
+(29, 72, 'đã đặt'),
 (30, 72, 'trống'),
-(31, 72, 'trống'),
+(31, 72, 'đã đặt'),
 (32, 72, 'trống'),
-(33, 72, 'trống'),
+(33, 72, 'đã đặt'),
 (34, 72, 'trống'),
 (35, 72, 'trống'),
 (36, 72, 'trống'),
-(37, 72, 'trống'),
+(37, 72, 'đã đặt'),
 (38, 72, 'trống'),
-(39, 72, 'trống'),
+(39, 72, 'đã đặt'),
 (40, 72, 'trống'),
-(41, 72, 'trống'),
+(41, 72, 'đã đặt'),
 (42, 72, 'trống'),
 (43, 72, 'trống'),
 (44, 72, 'trống'),
@@ -5238,12 +5258,174 @@ INSERT INTO `seat_performance` (`seat_id`, `performance_id`, `status`) VALUES
 (49, 72, 'trống'),
 (50, 72, 'trống'),
 (51, 72, 'trống'),
-(52, 72, 'trống');
+(52, 72, 'trống'),
+(144, 74, 'đã đặt'),
+(145, 74, 'đã đặt'),
+(146, 74, 'đã đặt'),
+(147, 74, 'đã đặt'),
+(148, 74, 'trống'),
+(149, 74, 'trống'),
+(150, 74, 'trống'),
+(151, 74, 'trống'),
+(152, 74, 'đã đặt'),
+(153, 74, 'đã đặt'),
+(154, 74, 'đã đặt'),
+(155, 74, 'đã đặt'),
+(156, 74, 'trống'),
+(157, 74, 'trống'),
+(158, 74, 'trống'),
+(159, 74, 'trống'),
+(160, 74, 'đã đặt'),
+(161, 74, 'trống'),
+(162, 74, 'đã đặt'),
+(163, 74, 'trống'),
+(164, 74, 'đã đặt'),
+(165, 74, 'đã đặt'),
+(166, 74, 'trống'),
+(167, 74, 'đã đặt'),
+(168, 74, 'trống'),
+(169, 74, 'đã đặt'),
+(1, 75, 'đã đặt'),
+(2, 75, 'trống'),
+(3, 75, 'đã đặt'),
+(4, 75, 'trống'),
+(5, 75, 'đã đặt'),
+(6, 75, 'trống'),
+(7, 75, 'đã đặt'),
+(8, 75, 'trống'),
+(9, 75, 'đã đặt'),
+(10, 75, 'trống'),
+(11, 75, 'đã đặt'),
+(12, 75, 'trống'),
+(13, 75, 'đã đặt'),
+(14, 75, 'trống'),
+(15, 75, 'đã đặt'),
+(16, 75, 'trống'),
+(17, 75, 'đã đặt'),
+(18, 75, 'trống'),
+(19, 75, 'đã đặt'),
+(20, 75, 'trống'),
+(21, 75, 'đã đặt'),
+(22, 75, 'trống'),
+(23, 75, 'đã đặt'),
+(24, 75, 'trống'),
+(25, 75, 'đã đặt'),
+(26, 75, 'trống'),
+(27, 75, 'đã đặt'),
+(28, 75, 'trống'),
+(29, 75, 'trống'),
+(30, 75, 'trống'),
+(31, 75, 'đã đặt'),
+(32, 75, 'trống'),
+(33, 75, 'đã đặt'),
+(34, 75, 'trống'),
+(35, 75, 'đã đặt'),
+(36, 75, 'trống'),
+(37, 75, 'đã đặt'),
+(38, 75, 'trống'),
+(39, 75, 'đã đặt'),
+(40, 75, 'trống'),
+(41, 75, 'đã đặt'),
+(42, 75, 'trống'),
+(43, 75, 'đã đặt'),
+(44, 75, 'trống'),
+(45, 75, 'đã đặt'),
+(46, 75, 'trống'),
+(47, 75, 'đã đặt'),
+(48, 75, 'trống'),
+(49, 75, 'đã đặt'),
+(50, 75, 'trống'),
+(51, 75, 'đã đặt'),
+(52, 75, 'trống'),
+(1, 76, 'đã đặt'),
+(2, 76, 'trống'),
+(3, 76, 'đã đặt'),
+(4, 76, 'trống'),
+(5, 76, 'đã đặt'),
+(6, 76, 'trống'),
+(7, 76, 'đã đặt'),
+(8, 76, 'trống'),
+(9, 76, 'đã đặt'),
+(10, 76, 'trống'),
+(11, 76, 'đã đặt'),
+(12, 76, 'trống'),
+(13, 76, 'đã đặt'),
+(14, 76, 'trống'),
+(15, 76, 'đã đặt'),
+(16, 76, 'trống'),
+(17, 76, 'đã đặt'),
+(18, 76, 'trống'),
+(19, 76, 'đã đặt'),
+(20, 76, 'trống'),
+(21, 76, 'đã đặt'),
+(22, 76, 'trống'),
+(23, 76, 'đã đặt'),
+(24, 76, 'trống'),
+(25, 76, 'đã đặt'),
+(26, 76, 'trống'),
+(27, 76, 'đã đặt'),
+(28, 76, 'trống'),
+(29, 76, 'đã đặt'),
+(30, 76, 'trống'),
+(31, 76, 'trống'),
+(32, 76, 'đã đặt'),
+(33, 76, 'trống'),
+(34, 76, 'đã đặt'),
+(35, 76, 'trống'),
+(36, 76, 'đã đặt'),
+(37, 76, 'trống'),
+(38, 76, 'đã đặt'),
+(39, 76, 'trống'),
+(40, 76, 'đã đặt'),
+(41, 76, 'trống'),
+(42, 76, 'đã đặt'),
+(43, 76, 'trống'),
+(44, 76, 'đã đặt'),
+(45, 76, 'trống'),
+(46, 76, 'đã đặt'),
+(47, 76, 'trống'),
+(48, 76, 'đã đặt'),
+(49, 76, 'trống'),
+(50, 76, 'đã đặt'),
+(51, 76, 'trống'),
+(52, 76, 'đã đặt'),
+(53, 77, 'đã đặt'),
+(54, 77, 'trống'),
+(55, 77, 'đã đặt'),
+(56, 77, 'trống'),
+(57, 77, 'đã đặt'),
+(58, 77, 'trống'),
+(59, 77, 'đã đặt'),
+(60, 77, 'trống'),
+(61, 77, 'đã đặt'),
+(62, 77, 'trống'),
+(63, 77, 'đã đặt'),
+(64, 77, 'trống'),
+(65, 77, 'đã đặt'),
+(66, 77, 'trống'),
+(67, 77, 'đã đặt'),
+(68, 77, 'trống'),
+(69, 77, 'đã đặt'),
+(70, 77, 'trống'),
+(71, 77, 'đã đặt'),
+(72, 77, 'trống'),
+(73, 77, 'đã đặt'),
+(74, 77, 'trống'),
+(75, 77, 'đã đặt'),
+(76, 77, 'trống'),
+(107, 77, 'đã đặt'),
+(108, 77, 'đã đặt'),
+(109, 77, 'trống'),
+(110, 77, 'đã đặt'),
+(111, 77, 'trống'),
+(112, 77, 'trống'),
+(113, 77, 'trống'),
+(114, 77, 'trống');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `shows`
+-- Cấu trúc bảng cho bảng `shows`
 --
 
 CREATE TABLE `shows` (
@@ -5259,7 +5441,7 @@ CREATE TABLE `shows` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `shows`
+-- Đang đổ dữ liệu cho bảng `shows`
 --
 
 INSERT INTO `shows` (`show_id`, `title`, `description`, `duration_minutes`, `director`, `poster_image_url`, `status`, `created_at`, `updated_at`) VALUES
@@ -5267,20 +5449,20 @@ INSERT INTO `shows` (`show_id`, `title`, `description`, `duration_minutes`, `dir
 (9, 'Gánh Cỏ Sông Hàn', 'Lấy bối cảnh miền Trung những năm sau chiến tranh, vở kịch khắc họa số phận những con người mưu sinh bên bến sông Hàn, với tình người chan chứa giữa cuộc đời đầy nhọc nhằn.', 110, 'Trần Thị Mai', 'assets/images/ganh-co-poster.jpg', 'Đã kết thúc', '2025-08-01 00:00:00', '2025-11-22 11:47:10'),
 (10, 'Làng Song Sinh', 'Một ngôi làng kỳ bí nơi những cặp song sinh liên tục chào đời. Bí mật phía sau sự trùng hợp ấy dần hé lộ, để rồi đẩy người xem vào những tình huống ly kỳ và ám ảnh.', 100, 'Lê Hoàng Nam', 'assets/images/lang-song-sinh-poster.jpg', 'Đã kết thúc', '2025-08-01 00:00:00', '2025-11-26 04:15:26'),
 (11, 'Lôi Vũ', 'Một trong những vở kịch nổi tiếng nhất thế kỷ XX, “Lôi Vũ” phơi bày những mâu thuẫn giai cấp, đạo đức và gia đình trong xã hội cũ. Vở diễn mang đến sự lay động mạnh mẽ và dư âm lâu dài.', 140, 'Phạm Quang Dũng', 'assets/images/loi-vu.jpg', 'Đang chiếu', '2025-08-01 00:00:00', '2025-11-29 19:56:21'),
-(12, 'Ngôi Nhà Trong Mây', 'Một câu chuyện thơ mộng về tình yêu và khát vọng sống, nơi con người tìm đến “ngôi nhà trong mây” để trốn chạy thực tại. Nhưng rồi họ nhận ra: hạnh phúc thật sự chỉ đến khi dám đối diện với chính mình.', 104, 'Vũ Thảo My', 'assets/images/ngoi-nha-trong-may-poster.jpg', 'Đã kết thúc', '2025-08-01 00:00:00', '2025-11-26 14:12:14'),
+(12, 'Ngôi Nhà Trong Mây', 'Một câu chuyện thơ mộng về tình yêu và khát vọng sống, nơi con người tìm đến “ngôi nhà trong mây” để trốn chạy thực tại. Nhưng rồi họ nhận ra: hạnh phúc thật sự chỉ đến khi dám đối diện với chính mình.', 104, 'Vũ Thảo My', 'assets/images/ngoi-nha-trong-may-poster.jpg', 'Đang chiếu', '2025-08-01 00:00:00', '2025-12-08 09:45:48'),
 (13, 'Tấm Cám Đại Chiến', 'Phiên bản hiện đại, vui nhộn và đầy sáng tạo của truyện cổ tích “Tấm Cám”. Với yếu tố gây cười, châm biếm và bất ngờ, vở diễn mang đến những phút giây giải trí thú vị cho cả gia đình.', 95, 'Hoàng Anh Tú', 'assets/images/tam-cam-poster.jpg', 'Đang chiếu', '2025-08-01 00:00:00', '2025-11-29 19:56:21'),
 (14, 'Má ơi út dìa', 'Câu chuyện cảm động về tình mẫu tử và nỗi day dứt của người con xa quê. Những ký ức, những tiếng gọi “Má ơi” trở thành sợi dây kết nối quá khứ và hiện tại.', 110, 'Nguyễn Thị Thanh Hương', 'assets/images/ma-oi-ut-dia-poster.png', 'Đã kết thúc', '2025-11-04 12:37:19', '2025-11-30 14:34:45'),
 (15, 'Tía ơi má dìa', 'Một vở kịch hài – tình cảm về những hiểu lầm, giận hờn và yêu thương trong một gia đình miền Tây. Tiếng cười và nước mắt đan xen tạo nên cảm xúc sâu lắng.', 100, 'Trần Hoài Phong', 'assets/images/tia-oi-ma-dia-poster.jpg', 'Đã kết thúc', '2025-11-04 12:40:24', '2025-11-24 07:07:01'),
 (16, 'Đức Thượng Công Tả Quân Lê Văn Duyệt', 'Tái hiện hình tượng vị danh tướng Lê Văn Duyệt – người để lại dấu ấn sâu đậm trong lịch sử và lòng dân Nam Bộ. Một vở diễn lịch sử trang trọng, đầy khí phách.', 130, 'Phạm Hữu Tấn', 'assets/images/duc-thuong-cong-ta-quan-le-van-duyet-poster.jpg', 'Đã kết thúc', '2025-11-04 12:42:26', '2025-11-24 07:07:01'),
 (17, 'Chuyến Đò Định Mệnh', 'Một câu chuyện đầy kịch tính xoay quanh chuyến đò cuối cùng của đời người lái đò, nơi tình yêu, tội lỗi và sự tha thứ gặp nhau trong một đêm giông bão.', 115, 'Vũ Ngọc Dũng', 'assets/images/chuyen-do-dinh-menh-poster.jpg', 'Đã kết thúc', '2025-11-04 12:43:35', '2025-12-07 11:30:19'),
-(18, 'Một Ngày Làm Vua', 'Vở hài kịch xã hội châm biếm về một người bình thường bỗng được trao quyền lực. Từ đó, những tình huống oái oăm, dở khóc dở cười liên tục xảy ra.', 100, 'Nguyễn Hoàng Anh', 'assets/images/mot-ngay-lam-vua-poster.jpg', 'Đã kết thúc', '2025-11-04 12:44:58', '2025-11-22 11:47:10'),
-(19, 'Xóm Vịt Trời', 'Một góc nhìn nhân văn và hài hước về cuộc sống mưu sinh của những người lao động nghèo trong một xóm nhỏ ven sông. Dù khốn khó, họ vẫn giữ niềm tin và tình người.', 105, 'Lê Thị Phương Loan', 'assets/images/xom-vit-troi-poster.jpg', 'Đã kết thúc', '2025-11-04 12:46:05', '2025-11-22 11:47:10'),
+(18, 'Một Ngày Làm Vua', 'Vở hài kịch xã hội châm biếm về một người bình thường bỗng được trao quyền lực. Từ đó, những tình huống oái oăm, dở khóc dở cười liên tục xảy ra.', 100, 'Nguyễn Hoàng Anh', 'assets/images/mot-ngay-lam-vua-poster.jpg', 'Đang chiếu', '2025-11-04 12:44:58', '2025-12-08 09:45:26'),
+(19, 'Xóm Vịt Trời', 'Một góc nhìn nhân văn và hài hước về cuộc sống mưu sinh của những người lao động nghèo trong một xóm nhỏ ven sông. Dù khốn khó, họ vẫn giữ niềm tin và tình người.', 105, 'Lê Thị Phương Loan', 'assets/images/xom-vit-troi-poster.jpg', 'Đang chiếu', '2025-11-04 12:46:05', '2025-12-08 09:44:41'),
 (20, 'Những con ma nhà hát', '“Những Con Ma Nhà Hát” là một câu chuyện rùng rợn nhưng cũng đầy tính châm biếm, xoay quanh những hiện tượng kỳ bí xảy ra tại một nhà hát cũ sắp bị phá bỏ. Khi đoàn kịch mới đến tập luyện, những bóng ma của các diễn viên quá cố bắt đầu xuất hiện, đưa người xem vào hành trình giằng co giữa nghệ thuật, danh vọng và quá khứ bị lãng quên.', 115, 'Nguyễn Khánh Trung', 'assets/images/nhung-con-ma-poster.jpg', 'Đã kết thúc', '2025-11-04 13:19:55', '2025-11-30 14:34:45');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `show_actors`
+-- Cấu trúc bảng cho bảng `show_actors`
 --
 
 CREATE TABLE `show_actors` (
@@ -5289,7 +5471,7 @@ CREATE TABLE `show_actors` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `show_actors`
+-- Đang đổ dữ liệu cho bảng `show_actors`
 --
 
 INSERT INTO `show_actors` (`show_id`, `actor_id`) VALUES
@@ -5339,7 +5521,7 @@ INSERT INTO `show_actors` (`show_id`, `actor_id`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `show_genres`
+-- Cấu trúc bảng cho bảng `show_genres`
 --
 
 CREATE TABLE `show_genres` (
@@ -5348,7 +5530,7 @@ CREATE TABLE `show_genres` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `show_genres`
+-- Đang đổ dữ liệu cho bảng `show_genres`
 --
 
 INSERT INTO `show_genres` (`show_id`, `genre_id`) VALUES
@@ -5391,7 +5573,7 @@ INSERT INTO `show_genres` (`show_id`, `genre_id`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `theaters`
+-- Cấu trúc bảng cho bảng `theaters`
 --
 
 CREATE TABLE `theaters` (
@@ -5403,7 +5585,7 @@ CREATE TABLE `theaters` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `theaters`
+-- Đang đổ dữ liệu cho bảng `theaters`
 --
 
 INSERT INTO `theaters` (`theater_id`, `name`, `total_seats`, `created_at`, `status`) VALUES
@@ -5415,7 +5597,7 @@ INSERT INTO `theaters` (`theater_id`, `name`, `total_seats`, `created_at`, `stat
 -- --------------------------------------------------------
 
 --
--- Table structure for table `tickets`
+-- Cấu trúc bảng cho bảng `tickets`
 --
 
 CREATE TABLE `tickets` (
@@ -5429,7 +5611,7 @@ CREATE TABLE `tickets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `tickets`
+-- Đang đổ dữ liệu cho bảng `tickets`
 --
 
 INSERT INTO `tickets` (`ticket_id`, `booking_id`, `seat_id`, `ticket_code`, `status`, `created_at`, `updated_at`) VALUES
@@ -5997,8 +6179,7 @@ INSERT INTO `tickets` (`ticket_id`, `booking_id`, `seat_id`, `ticket_code`, `sta
 (562, 221, 19, 1000000000696, 'Đã sử dụng', '2025-06-14 16:44:22', '2025-06-14 16:44:22'),
 (563, 221, 21, 1000000000697, 'Đã sử dụng', '2025-06-14 16:44:22', '2025-06-14 16:44:22'),
 (564, 222, 1, 1000000000698, 'Đã sử dụng', '2025-06-15 11:55:33', '2025-06-15 11:55:33'),
-(565, 222, 3, 1000000000699, 'Đã sử dụng', '2025-06-15 11:55:33', '2025-06-15 11:55:33');
-INSERT INTO `tickets` (`ticket_id`, `booking_id`, `seat_id`, `ticket_code`, `status`, `created_at`, `updated_at`) VALUES
+(565, 222, 3, 1000000000699, 'Đã sử dụng', '2025-06-15 11:55:33', '2025-06-15 11:55:33'),
 (566, 223, 1, 1000000000742, 'Đã sử dụng', '2025-06-15 09:22:11', '2025-06-15 09:22:11'),
 (567, 223, 3, 1000000000743, 'Đã sử dụng', '2025-06-15 09:22:11', '2025-06-15 09:22:11'),
 (568, 223, 5, 1000000000744, 'Đã sử dụng', '2025-06-15 09:22:11', '2025-06-15 09:22:11'),
@@ -6405,12 +6586,108 @@ INSERT INTO `tickets` (`ticket_id`, `booking_id`, `seat_id`, `ticket_code`, `sta
 (969, 377, 107, 1000000001337, 'Hợp lệ', '2025-12-01 15:29:11', '2025-12-01 15:29:11'),
 (970, 377, 109, 1000000001338, 'Hợp lệ', '2025-12-01 15:29:11', '2025-12-01 15:29:11'),
 (971, 378, 111, 1000000001339, 'Hợp lệ', '2025-12-02 10:44:55', '2025-12-02 10:44:55'),
-(972, 378, 113, 1000000001340, 'Hợp lệ', '2025-12-02 10:44:55', '2025-12-02 10:44:55');
+(972, 378, 113, 1000000001340, 'Hợp lệ', '2025-12-02 10:44:55', '2025-12-02 10:44:55'),
+(991, 387, 71, 1406516864343, 'Hợp lệ', '2025-12-08 09:41:15', '2025-12-08 09:41:15'),
+(992, 387, 73, 8821594870482, 'Hợp lệ', '2025-12-08 09:41:15', '2025-12-08 09:41:15'),
+(993, 388, 75, 2888424035988, 'Hợp lệ', '2025-12-08 09:41:27', '2025-12-08 09:41:27'),
+(994, 388, 110, 4977335845098, 'Hợp lệ', '2025-12-08 09:41:27', '2025-12-08 09:41:27'),
+(995, 389, 17, 6221407394130, 'Hợp lệ', '2025-12-08 09:41:51', '2025-12-08 09:41:51'),
+(996, 389, 19, 6175029711960, 'Hợp lệ', '2025-12-08 09:41:51', '2025-12-08 09:41:51'),
+(997, 390, 21, 2210926654013, 'Hợp lệ', '2025-12-08 09:42:01', '2025-12-08 09:42:01'),
+(998, 390, 23, 9529544410788, 'Hợp lệ', '2025-12-08 09:42:02', '2025-12-08 09:42:02'),
+(999, 391, 25, 4014942368506, 'Hợp lệ', '2025-12-08 09:42:14', '2025-12-08 09:42:14'),
+(1000, 391, 27, 8486078886767, 'Hợp lệ', '2025-12-08 09:42:14', '2025-12-08 09:42:14'),
+(1001, 391, 29, 2385567604923, 'Hợp lệ', '2025-12-08 09:42:14', '2025-12-08 09:42:14'),
+(1002, 392, 31, 3469601640914, 'Hợp lệ', '2025-12-08 09:42:28', '2025-12-08 09:42:28'),
+(1003, 392, 33, 9191305666407, 'Hợp lệ', '2025-12-08 09:42:28', '2025-12-08 09:42:28'),
+(1004, 393, 37, 7547723685900, 'Hợp lệ', '2025-12-08 09:42:36', '2025-12-08 09:42:36'),
+(1005, 393, 39, 9164701706882, 'Hợp lệ', '2025-12-08 09:42:36', '2025-12-08 09:42:36'),
+(1006, 393, 41, 4180337753314, 'Hợp lệ', '2025-12-08 09:42:36', '2025-12-08 09:42:36'),
+(1007, 394, 1, 5155285711544, 'Hợp lệ', '2025-12-08 09:46:20', '2025-12-08 09:46:20'),
+(1008, 394, 3, 1057608133235, 'Hợp lệ', '2025-12-08 09:46:20', '2025-12-08 09:46:20'),
+(1009, 395, 5, 6822183808145, 'Hợp lệ', '2025-12-08 09:46:31', '2025-12-08 09:46:31'),
+(1010, 395, 7, 2938094917626, 'Hợp lệ', '2025-12-08 09:46:31', '2025-12-08 09:46:31'),
+(1011, 395, 9, 2223923440299, 'Hợp lệ', '2025-12-08 09:46:31', '2025-12-08 09:46:31'),
+(1012, 396, 11, 1305332725220, 'Hợp lệ', '2025-12-08 09:46:38', '2025-12-08 09:46:38'),
+(1013, 396, 13, 7854893581805, 'Hợp lệ', '2025-12-08 09:46:38', '2025-12-08 09:46:38'),
+(1014, 397, 15, 7358470009973, 'Hợp lệ', '2025-12-08 09:46:48', '2025-12-08 09:46:48'),
+(1015, 397, 17, 3227669581051, 'Hợp lệ', '2025-12-08 09:46:48', '2025-12-08 09:46:48'),
+(1016, 397, 19, 2062938151939, 'Hợp lệ', '2025-12-08 09:46:48', '2025-12-08 09:46:48'),
+(1017, 398, 21, 8631682293145, 'Hợp lệ', '2025-12-08 09:47:01', '2025-12-08 09:47:01'),
+(1018, 398, 23, 8969597286515, 'Hợp lệ', '2025-12-08 09:47:01', '2025-12-08 09:47:01'),
+(1019, 398, 25, 8952939829744, 'Hợp lệ', '2025-12-08 09:47:01', '2025-12-08 09:47:01'),
+(1020, 399, 27, 7855907565779, 'Hợp lệ', '2025-12-08 09:47:12', '2025-12-08 09:47:12'),
+(1021, 399, 29, 2420718616266, 'Hợp lệ', '2025-12-08 09:47:12', '2025-12-08 09:47:12'),
+(1022, 400, 32, 5535870660594, 'Hợp lệ', '2025-12-08 09:47:20', '2025-12-08 09:47:20'),
+(1023, 400, 34, 1417197730780, 'Hợp lệ', '2025-12-08 09:47:20', '2025-12-08 09:47:20'),
+(1024, 400, 36, 7478376948719, 'Hợp lệ', '2025-12-08 09:47:20', '2025-12-08 09:47:20'),
+(1025, 401, 38, 5140291827861, 'Hợp lệ', '2025-12-08 09:47:30', '2025-12-08 09:47:30'),
+(1026, 401, 40, 2266328569749, 'Hợp lệ', '2025-12-08 09:47:30', '2025-12-08 09:47:30'),
+(1027, 401, 42, 3910767641766, 'Hợp lệ', '2025-12-08 09:47:30', '2025-12-08 09:47:30'),
+(1028, 402, 44, 2754852776187, 'Hợp lệ', '2025-12-08 09:47:35', '2025-12-08 09:47:35'),
+(1029, 402, 46, 1041961232239, 'Hợp lệ', '2025-12-08 09:47:35', '2025-12-08 09:47:35'),
+(1030, 403, 48, 4945248109237, 'Hợp lệ', '2025-12-08 09:47:45', '2025-12-08 09:47:45'),
+(1031, 403, 50, 2600357126072, 'Hợp lệ', '2025-12-08 09:47:45', '2025-12-08 09:47:45'),
+(1032, 403, 52, 6166041579251, 'Hợp lệ', '2025-12-08 09:47:45', '2025-12-08 09:47:45'),
+(1033, 404, 144, 4029136794646, 'Hợp lệ', '2025-12-08 09:47:58', '2025-12-08 09:47:58'),
+(1034, 404, 145, 9647559512077, 'Hợp lệ', '2025-12-08 09:47:58', '2025-12-08 09:47:58'),
+(1035, 405, 152, 8150387453054, 'Hợp lệ', '2025-12-08 09:48:05', '2025-12-08 09:48:05'),
+(1036, 405, 153, 1809259005644, 'Hợp lệ', '2025-12-08 09:48:05', '2025-12-08 09:48:05'),
+(1037, 406, 160, 1595132945659, 'Hợp lệ', '2025-12-08 09:48:14', '2025-12-08 09:48:14'),
+(1038, 406, 162, 1547887987967, 'Hợp lệ', '2025-12-08 09:48:14', '2025-12-08 09:48:14'),
+(1039, 406, 164, 1954041379460, 'Hợp lệ', '2025-12-08 09:48:14', '2025-12-08 09:48:14'),
+(1040, 407, 165, 4126543210005, 'Hợp lệ', '2025-12-08 09:48:22', '2025-12-08 09:48:22'),
+(1041, 407, 167, 4770592188248, 'Hợp lệ', '2025-12-08 09:48:22', '2025-12-08 09:48:22'),
+(1042, 407, 169, 1473331587829, 'Hợp lệ', '2025-12-08 09:48:22', '2025-12-08 09:48:22'),
+(1043, 408, 154, 1054881651005, 'Hợp lệ', '2025-12-08 09:48:30', '2025-12-08 09:48:30'),
+(1044, 408, 155, 8854413768140, 'Hợp lệ', '2025-12-08 09:48:30', '2025-12-08 09:48:30'),
+(1045, 409, 146, 4107424164290, 'Hợp lệ', '2025-12-08 09:48:39', '2025-12-08 09:48:39'),
+(1046, 409, 147, 1973879793634, 'Hợp lệ', '2025-12-08 09:48:39', '2025-12-08 09:48:39'),
+(1047, 410, 53, 1407583922527, 'Hợp lệ', '2025-12-08 09:48:57', '2025-12-08 09:48:57'),
+(1048, 410, 55, 2496906629294, 'Hợp lệ', '2025-12-08 09:48:57', '2025-12-08 09:48:57'),
+(1049, 411, 57, 7261781655495, 'Hợp lệ', '2025-12-08 09:49:00', '2025-12-08 09:49:00'),
+(1050, 411, 107, 9818188666195, 'Hợp lệ', '2025-12-08 09:49:00', '2025-12-08 09:49:00'),
+(1051, 412, 59, 8305598641098, 'Hợp lệ', '2025-12-08 09:49:05', '2025-12-08 09:49:05'),
+(1052, 412, 61, 2073427483507, 'Hợp lệ', '2025-12-08 09:49:05', '2025-12-08 09:49:05'),
+(1053, 413, 63, 2450341770844, 'Hợp lệ', '2025-12-08 09:49:10', '2025-12-08 09:49:10'),
+(1054, 413, 108, 5031426680303, 'Hợp lệ', '2025-12-08 09:49:10', '2025-12-08 09:49:10'),
+(1055, 414, 65, 7806108365585, 'Hợp lệ', '2025-12-08 09:49:23', '2025-12-08 09:49:23'),
+(1056, 414, 67, 4936262063622, 'Hợp lệ', '2025-12-08 09:49:23', '2025-12-08 09:49:23'),
+(1057, 414, 69, 9262985497957, 'Hợp lệ', '2025-12-08 09:49:23', '2025-12-08 09:49:23'),
+(1058, 415, 71, 3506141575524, 'Hợp lệ', '2025-12-07 09:49:31', '2025-12-07 09:49:31'),
+(1059, 415, 73, 6741751660351, 'Hợp lệ', '2025-12-07 09:49:31', '2025-12-07 09:49:31'),
+(1060, 416, 75, 4190333851790, 'Hợp lệ', '2025-12-07 09:49:35', '2025-12-07 09:49:35'),
+(1061, 416, 110, 8726414554496, 'Hợp lệ', '2025-12-07 09:49:35', '2025-12-07 09:49:35'),
+(1062, 417, 1, 3061071493719, 'Hợp lệ', '2025-12-07 09:49:51', '2025-12-07 09:49:51'),
+(1063, 417, 3, 6126114081708, 'Hợp lệ', '2025-12-07 09:49:51', '2025-12-07 09:49:51'),
+(1064, 418, 5, 2447356203987, 'Hợp lệ', '2025-12-07 09:49:57', '2025-12-07 09:49:57'),
+(1065, 418, 7, 1858439051414, 'Hợp lệ', '2025-12-07 09:49:57', '2025-12-07 09:49:57'),
+(1066, 418, 9, 9950126921710, 'Hợp lệ', '2025-12-07 09:49:57', '2025-12-07 09:49:57'),
+(1067, 419, 11, 7175317730917, 'Hợp lệ', '2025-12-07 09:50:05', '2025-12-07 09:50:05'),
+(1068, 419, 13, 5026208166056, 'Hợp lệ', '2025-12-07 09:50:05', '2025-12-07 09:50:05'),
+(1069, 419, 15, 2605087914136, 'Hợp lệ', '2025-12-07 09:50:05', '2025-12-07 09:50:05'),
+(1070, 420, 17, 5946815349111, 'Hợp lệ', '2025-12-07 09:50:12', '2025-12-07 09:50:12'),
+(1071, 420, 19, 2918813279754, 'Hợp lệ', '2025-12-07 09:50:12', '2025-12-07 09:50:12'),
+(1072, 421, 21, 4753620628037, 'Hợp lệ', '2025-12-07 09:50:20', '2025-12-07 09:50:20'),
+(1073, 421, 23, 5011663577529, 'Hợp lệ', '2025-12-07 09:50:20', '2025-12-07 09:50:20'),
+(1074, 422, 25, 9797456280138, 'Hợp lệ', '2025-12-07 09:50:24', '2025-12-07 09:50:24'),
+(1075, 422, 27, 5952290944710, 'Hợp lệ', '2025-12-07 09:50:24', '2025-12-07 09:50:24'),
+(1076, 423, 31, 8369086159736, 'Hợp lệ', '2025-12-07 09:50:29', '2025-12-07 09:50:29'),
+(1077, 423, 33, 4988558241155, 'Hợp lệ', '2025-12-07 09:50:29', '2025-12-07 09:50:29'),
+(1078, 423, 35, 7835533003168, 'Hợp lệ', '2025-12-07 09:50:29', '2025-12-07 09:50:29'),
+(1079, 424, 37, 5211990568983, 'Hợp lệ', '2025-12-07 09:50:33', '2025-12-07 09:50:33'),
+(1080, 424, 39, 1553354112015, 'Hợp lệ', '2025-12-07 09:50:33', '2025-12-07 09:50:33'),
+(1081, 424, 41, 9130799129726, 'Hợp lệ', '2025-12-07 09:50:33', '2025-12-07 09:50:33'),
+(1082, 425, 43, 3993933589191, 'Hợp lệ', '2025-12-07 09:50:38', '2025-12-07 09:50:38'),
+(1083, 425, 45, 9577270833380, 'Hợp lệ', '2025-12-07 09:50:38', '2025-12-07 09:50:38'),
+(1084, 426, 47, 7904553675934, 'Hợp lệ', '2025-12-07 09:50:42', '2025-12-07 09:50:42'),
+(1085, 426, 49, 9790956156132, 'Hợp lệ', '2025-12-07 09:50:42', '2025-12-07 09:50:42'),
+(1086, 427, 51, 6241120029464, 'Hợp lệ', '2025-12-07 09:50:45', '2025-12-07 09:50:45');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Cấu trúc bảng cho bảng `users`
 --
 
 CREATE TABLE `users` (
@@ -6426,7 +6703,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `users`
+-- Đang đổ dữ liệu cho bảng `users`
 --
 
 INSERT INTO `users` (`user_id`, `email`, `password`, `account_name`, `user_type`, `status`, `is_verified`, `otp_code`, `otp_expires_at`) VALUES
@@ -6446,7 +6723,7 @@ INSERT INTO `users` (`user_id`, `email`, `password`, `account_name`, `user_type`
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user_detail`
+-- Cấu trúc bảng cho bảng `user_detail`
 --
 
 CREATE TABLE `user_detail` (
@@ -6458,7 +6735,7 @@ CREATE TABLE `user_detail` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `user_detail`
+-- Đang đổ dữ liệu cho bảng `user_detail`
 --
 
 INSERT INTO `user_detail` (`user_id`, `full_name`, `date_of_birth`, `address`, `phone`) VALUES
@@ -6476,17 +6753,17 @@ INSERT INTO `user_detail` (`user_id`, `full_name`, `date_of_birth`, `address`, `
 (13, 'Dương Thanh Ngọc', '2005-08-12', '', '');
 
 --
--- Indexes for dumped tables
+-- Chỉ mục cho các bảng đã đổ
 --
 
 --
--- Indexes for table `actors`
+-- Chỉ mục cho bảng `actors`
 --
 ALTER TABLE `actors`
   ADD PRIMARY KEY (`actor_id`);
 
 --
--- Indexes for table `bookings`
+-- Chỉ mục cho bảng `bookings`
 --
 ALTER TABLE `bookings`
   ADD PRIMARY KEY (`booking_id`),
@@ -6495,20 +6772,20 @@ ALTER TABLE `bookings`
   ADD KEY `idx_booking_created_by` (`created_by`);
 
 --
--- Indexes for table `genres`
+-- Chỉ mục cho bảng `genres`
 --
 ALTER TABLE `genres`
   ADD PRIMARY KEY (`genre_id`);
 
 --
--- Indexes for table `payments`
+-- Chỉ mục cho bảng `payments`
 --
 ALTER TABLE `payments`
   ADD PRIMARY KEY (`payment_id`),
   ADD KEY `idx_payment_booking` (`booking_id`);
 
 --
--- Indexes for table `performances`
+-- Chỉ mục cho bảng `performances`
 --
 ALTER TABLE `performances`
   ADD PRIMARY KEY (`performance_id`),
@@ -6516,15 +6793,7 @@ ALTER TABLE `performances`
   ADD KEY `idx_performance_theater` (`theater_id`);
 
 --
--- Indexes for table `reviews`
---
-ALTER TABLE `reviews`
-  ADD PRIMARY KEY (`review_id`),
-  ADD KEY `idx_review_show` (`show_id`),
-  ADD KEY `idx_review_user` (`user_id`);
-
---
--- Indexes for table `seats`
+-- Chỉ mục cho bảng `seats`
 --
 ALTER TABLE `seats`
   ADD PRIMARY KEY (`seat_id`),
@@ -6532,46 +6801,46 @@ ALTER TABLE `seats`
   ADD KEY `idx_seat_category` (`category_id`);
 
 --
--- Indexes for table `seat_categories`
+-- Chỉ mục cho bảng `seat_categories`
 --
 ALTER TABLE `seat_categories`
   ADD PRIMARY KEY (`category_id`);
 
 --
--- Indexes for table `seat_performance`
+-- Chỉ mục cho bảng `seat_performance`
 --
 ALTER TABLE `seat_performance`
   ADD KEY `idx_sp_performance` (`performance_id`),
   ADD KEY `idx_sp_seat` (`seat_id`);
 
 --
--- Indexes for table `shows`
+-- Chỉ mục cho bảng `shows`
 --
 ALTER TABLE `shows`
   ADD PRIMARY KEY (`show_id`);
 
 --
--- Indexes for table `show_actors`
+-- Chỉ mục cho bảng `show_actors`
 --
 ALTER TABLE `show_actors`
   ADD KEY `idx_sa_actor` (`actor_id`),
   ADD KEY `fk_sa_show` (`show_id`);
 
 --
--- Indexes for table `show_genres`
+-- Chỉ mục cho bảng `show_genres`
 --
 ALTER TABLE `show_genres`
   ADD KEY `idx_sg_show` (`show_id`),
   ADD KEY `idx_sg_genre` (`genre_id`);
 
 --
--- Indexes for table `theaters`
+-- Chỉ mục cho bảng `theaters`
 --
 ALTER TABLE `theaters`
   ADD PRIMARY KEY (`theater_id`);
 
 --
--- Indexes for table `tickets`
+-- Chỉ mục cho bảng `tickets`
 --
 ALTER TABLE `tickets`
   ADD PRIMARY KEY (`ticket_id`),
@@ -6580,7 +6849,7 @@ ALTER TABLE `tickets`
   ADD KEY `idx_ticket_seat` (`seat_id`);
 
 --
--- Indexes for table `users`
+-- Chỉ mục cho bảng `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
@@ -6588,99 +6857,93 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `unique_account` (`account_name`);
 
 --
--- Indexes for table `user_detail`
+-- Chỉ mục cho bảng `user_detail`
 --
 ALTER TABLE `user_detail`
   ADD PRIMARY KEY (`user_id`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT cho các bảng đã đổ
 --
 
 --
--- AUTO_INCREMENT for table `actors`
+-- AUTO_INCREMENT cho bảng `actors`
 --
 ALTER TABLE `actors`
   MODIFY `actor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
--- AUTO_INCREMENT for table `bookings`
+-- AUTO_INCREMENT cho bảng `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `booking_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=387;
+  MODIFY `booking_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=428;
 
 --
--- AUTO_INCREMENT for table `genres`
+-- AUTO_INCREMENT cho bảng `genres`
 --
 ALTER TABLE `genres`
   MODIFY `genre_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
--- AUTO_INCREMENT for table `payments`
+-- AUTO_INCREMENT cho bảng `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=394;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=435;
 
 --
--- AUTO_INCREMENT for table `performances`
+-- AUTO_INCREMENT cho bảng `performances`
 --
 ALTER TABLE `performances`
-  MODIFY `performance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `performance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
 
 --
--- AUTO_INCREMENT for table `reviews`
---
-ALTER TABLE `reviews`
-  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `seats`
+-- AUTO_INCREMENT cho bảng `seats`
 --
 ALTER TABLE `seats`
   MODIFY `seat_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=170;
 
 --
--- AUTO_INCREMENT for table `seat_categories`
+-- AUTO_INCREMENT cho bảng `seat_categories`
 --
 ALTER TABLE `seat_categories`
   MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
--- AUTO_INCREMENT for table `shows`
+-- AUTO_INCREMENT cho bảng `shows`
 --
 ALTER TABLE `shows`
   MODIFY `show_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
--- AUTO_INCREMENT for table `theaters`
+-- AUTO_INCREMENT cho bảng `theaters`
 --
 ALTER TABLE `theaters`
   MODIFY `theater_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT for table `tickets`
+-- AUTO_INCREMENT cho bảng `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `ticket_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=991;
+  MODIFY `ticket_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1087;
 
 --
--- AUTO_INCREMENT for table `users`
+-- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
--- AUTO_INCREMENT for table `user_detail`
+-- AUTO_INCREMENT cho bảng `user_detail`
 --
 ALTER TABLE `user_detail`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
--- Constraints for dumped tables
+-- Các ràng buộc cho các bảng đã đổ
 --
 
 --
--- Constraints for table `bookings`
+-- Các ràng buộc cho bảng `bookings`
 --
 ALTER TABLE `bookings`
   ADD CONSTRAINT `fk_booking_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`),
@@ -6688,62 +6951,55 @@ ALTER TABLE `bookings`
   ADD CONSTRAINT `fk_booking_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `payments`
+-- Các ràng buộc cho bảng `payments`
 --
 ALTER TABLE `payments`
   ADD CONSTRAINT `fk_payment_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `performances`
+-- Các ràng buộc cho bảng `performances`
 --
 ALTER TABLE `performances`
   ADD CONSTRAINT `fk_performance_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_performance_theater` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`theater_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `reviews`
---
-ALTER TABLE `reviews`
-  ADD CONSTRAINT `fk_review_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `seats`
+-- Các ràng buộc cho bảng `seats`
 --
 ALTER TABLE `seats`
   ADD CONSTRAINT `fk_seat_category` FOREIGN KEY (`category_id`) REFERENCES `seat_categories` (`category_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_seat_theater` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`theater_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `seat_performance`
+-- Các ràng buộc cho bảng `seat_performance`
 --
 ALTER TABLE `seat_performance`
   ADD CONSTRAINT `fk_sp_performance` FOREIGN KEY (`performance_id`) REFERENCES `performances` (`performance_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_sp_seat` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `show_actors`
+-- Các ràng buộc cho bảng `show_actors`
 --
 ALTER TABLE `show_actors`
   ADD CONSTRAINT `fk_sa_actor` FOREIGN KEY (`actor_id`) REFERENCES `actors` (`actor_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_sa_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `show_genres`
+-- Các ràng buộc cho bảng `show_genres`
 --
 ALTER TABLE `show_genres`
   ADD CONSTRAINT `fk_sg_genre` FOREIGN KEY (`genre_id`) REFERENCES `genres` (`genre_id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_sg_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `tickets`
+-- Các ràng buộc cho bảng `tickets`
 --
 ALTER TABLE `tickets`
   ADD CONSTRAINT `fk_ticket_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_ticket_seat` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`) ON UPDATE CASCADE;
 
 --
--- Constraints for table `user_detail`
+-- Các ràng buộc cho bảng `user_detail`
 --
 ALTER TABLE `user_detail`
   ADD CONSTRAINT `fk_user_detail` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
