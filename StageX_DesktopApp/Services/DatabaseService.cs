@@ -547,6 +547,16 @@ namespace StageX_DesktopApp.Services
             }
         }
 
+        public async Task<bool> CheckTheaterNameExistsAsync(string name, int excludeId = 0)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Kiểm tra có rạp nào trùng tên không. 
+                // excludeId dùng để bỏ qua chính nó khi đang thực hiện chức năng Sửa
+                return await context.Theaters.AnyAsync(t => t.Name == name && t.TheaterId != excludeId);
+            }
+        }
+
         #endregion
 
         // =================================================================================

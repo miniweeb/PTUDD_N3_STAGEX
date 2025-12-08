@@ -371,22 +371,66 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private async Task SaveChanges()
         {
+            // Nếu đang ở chế độ Xem (ReadOnly) thì không làm gì cả
             if (IsReadOnlyMode) return;
-            if (string.IsNullOrWhiteSpace(InputTheaterName)) { MessageBox.Show("Nhập tên rạp!"); return; }
-            if (CurrentSeats == null || CurrentSeats.Count == 0) { MessageBox.Show("Sơ đồ rạp trống!"); return; }
-            // Kiểm tra xem tất cả ghế đã được gán hạng chưa
-            if (CurrentSeats.Any(s => s.CategoryId == null || s.CategoryId == 0)) { MessageBox.Show("Vui lòng gán hạng ghế!"); return; }
 
+            // 1. Validate dữ liệu cơ bản
+            if (string.IsNullOrWhiteSpace(InputTheaterName))
+            {
+                MessageBox.Show("Vui lòng nhập tên rạp!", "Thiếu thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (CurrentSeats == null || CurrentSeats.Count == 0)
+            {
+                MessageBox.Show("Sơ đồ rạp trống! Vui lòng tạo ghế trước.", "Thiếu thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Kiểm tra xem tất cả ghế đã được gán hạng chưa
+            if (CurrentSeats.Any(s => s.CategoryId == null || s.CategoryId == 0))
+            {
+                MessageBox.Show("Vui lòng gán hạng ghế cho tất cả các ghế!", "Thiếu thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // 2. Validate nâng cao: KIỂM TRA TRÙNG TÊN RẠP
+            string targetName = InputTheaterName.Trim();
+            // Nếu đang tạo mới thì ID = 0, nếu đang sửa thì lấy ID của rạp hiện tại
+            int currentId = IsCreatingNew ? 0 : (SelectedTheater?.TheaterId ?? 0);
+
+            // Gọi DatabaseService để check (Hàm CheckTheaterNameExistsAsync bạn đã thêm ở bước trước)
+            bool isDuplicate = await _dbService.CheckTheaterNameExistsAsync(targetName, currentId);
+
+            if (isDuplicate)
+            {
+                MessageBox.Show($"Tên rạp '{targetName}' đã tồn tại! Vui lòng chọn tên khác.",
+                                "Lỗi trùng lặp",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                return; // Dừng lại ngay, không lưu
+            }
+
+            // 3. Thực hiện Lưu xuống Database
             try
             {
                 if (IsCreatingNew)
                 {
-                    // Thêm mới rạp và danh sách ghế
-                    var t = new Theater { Name = InputTheaterName, TotalSeats = CurrentSeats.Count, Status = "Đã hoạt động" };
+                    // === TRƯỜNG HỢP TẠO MỚI ===
+                    var t = new Theater
+                    {
+                        Name = targetName,
+                        TotalSeats = CurrentSeats.Count,
+                        Status = "Đã hoạt động"
+                    };
+
+                    // Gọi Service lưu rạp + danh sách ghế
                     await _dbService.SaveNewTheaterAsync(t, CurrentSeats);
-                    MessageBox.Show("Thêm mới thành công!");
+
+                    MessageBox.Show("Thêm mới thành công!", "Thông báo");
+
+                    // Tải lại dữ liệu và tự động chọn rạp vừa tạo để hiển thị
                     await LoadData();
-                    // Tự động chọn rạp vừa tạo
                     var newTheater = Theaters.FirstOrDefault(x => x.Name == t.Name);
                     if (newTheater != null)
                     {
@@ -395,17 +439,28 @@ namespace StageX_DesktopApp.ViewModels
                 }
                 else if (SelectedTheater != null)
                 {
-                    // Cập nhật rạp: DB Service sẽ xóa ghế cũ và thêm ghế mới
-                    SelectedTheater.Name = InputTheaterName;
+                    // === TRƯỜNG HỢP CẬP NHẬT ===
+                    SelectedTheater.Name = targetName;
+
+                    // Gọi Service cập nhật (Xóa ghế cũ, thêm ghế mới)
                     await _dbService.UpdateTheaterStructureAsync(SelectedTheater, CurrentSeats);
-                    MessageBox.Show("Cập nhật thành công!");
+
+                    MessageBox.Show("Cập nhật thành công!", "Thông báo");
+
                     await LoadData();
+                    // Chọn lại rạp đang sửa để hiển thị dữ liệu mới nhất
                     var updatedTheater = Theaters.FirstOrDefault(x => x.TheaterId == SelectedTheater.TheaterId);
                     if (updatedTheater != null) await SelectTheater(updatedTheater);
                 }
-                ResetToCreateMode(); await LoadData();
+
+                // Reset form về trạng thái ban đầu
+                ResetToCreateMode();
+                await LoadData();
             }
-            catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi hệ thống: " + ex.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // Command: Áp dụng hạng ghế cho các ghế đang chọn
