@@ -48,9 +48,6 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Có thể dùng LINQ hoặc SP. Dùng SP proc_check_user_exists cho tối ưu
-                // Tuy nhiên hàm SP này trả về Count, cần execute scalar. 
-                // Để đơn giản và an toàn với EF Core, đoạn check này dùng LINQ vẫn rất nhanh.
                 return await context.Users.AnyAsync(u => u.Email == email || u.AccountName == accountName);
             }
         }
@@ -462,9 +459,6 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // SP proc_get_seats_for_theater đã tồn tại và join sẵn category
-                // Tuy nhiên Model Seat cần map đúng. Nếu SP trả về cột khác Model -> Lỗi.
-                // Ở đây giữ LINQ Include cho an toàn với Model Seat hiện tại.
                 return await context.Seats
                     .Where(s => s.TheaterId == theaterId)
                     .Include(s => s.SeatCategory)
@@ -474,7 +468,7 @@ namespace StageX_DesktopApp.Services
         }
 
         /// <summary>
-        /// Tạo Rạp mới kèm danh sách ghế (Dùng SP proc_create_theater)
+        /// Tạo Rạp mới kèm danh sách ghế
         /// </summary>
         public async Task SaveNewTheaterAsync(Theater theater, List<Seat> seats)
         {
@@ -568,32 +562,16 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Cập nhật trạng thái trước khi lấy
-                await context.Database.ExecuteSqlRawAsync("CALL proc_update_statuses()");
+                // Chuẩn bị tham số cho SP
+                string keyword = string.IsNullOrEmpty(showName) ? "" : showName;
+                // Xử lý ngày: nếu null truyền NULL, nếu có thì truyền chuỗi 'yyyy-MM-dd'
+                string dateStr = date.HasValue ? $"'{date.Value:yyyy-MM-dd}'" : "NULL";
 
-                var query = context.Performances
-                    .Include(p => p.Show)
-                    .Include(p => p.Theater)
-                    .OrderByDescending(p => p.PerformanceDate)
-                    .AsNoTracking()
-                    .AsQueryable();
+                // Gọi SP và map kết quả
+                var list = await context.Performances
+                    .FromSqlInterpolated($"CALL proc_search_performances_optimized({keyword}, {theaterId}, {dateStr})")
+                    .ToListAsync();
 
-                if (!string.IsNullOrWhiteSpace(showName))
-                    query = query.Where(p => p.Show.Title.Contains(showName));
-                if (theaterId > 0)
-                    query = query.Where(p => p.TheaterId == theaterId);
-                if (date.HasValue)
-                    query = query.Where(p => p.PerformanceDate.Date == date.Value.Date);
-
-                var list = await query.ToListAsync();
-
-                // Check Booking
-                foreach (var p in list)
-                {
-                    p.HasBookings = await context.Bookings.AnyAsync(b => b.PerformanceId == p.PerformanceId);
-                    p.ShowTitle = p.Show?.Title;
-                    p.TheaterName = p.Theater?.Name;
-                }
                 return list;
             }
         }
