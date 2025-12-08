@@ -371,7 +371,7 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private async Task SaveChanges()
         {
-            // Nếu đang ở chế độ Xem (ReadOnly) thì không làm gì cả
+            // Nếu đang ở chế độ ReadOnly thì không làm gì cả
             if (IsReadOnlyMode) return;
 
             // 1. Validate dữ liệu cơ bản
@@ -394,12 +394,12 @@ namespace StageX_DesktopApp.ViewModels
                 return;
             }
 
-            // 2. Validate nâng cao: KIỂM TRA TRÙNG TÊN RẠP
+            // KIỂM TRA TRÙNG TÊN RẠP
             string targetName = InputTheaterName.Trim();
             // Nếu đang tạo mới thì ID = 0, nếu đang sửa thì lấy ID của rạp hiện tại
             int currentId = IsCreatingNew ? 0 : (SelectedTheater?.TheaterId ?? 0);
 
-            // Gọi DatabaseService để check (Hàm CheckTheaterNameExistsAsync bạn đã thêm ở bước trước)
+            // Gọi DatabaseService để check
             bool isDuplicate = await _dbService.CheckTheaterNameExistsAsync(targetName, currentId);
 
             if (isDuplicate)
@@ -408,7 +408,7 @@ namespace StageX_DesktopApp.ViewModels
                                 "Lỗi trùng lặp",
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
-                return; // Dừng lại ngay, không lưu
+                return; // Dừng lại, không lưu
             }
 
             // 3. Thực hiện Lưu xuống Database
