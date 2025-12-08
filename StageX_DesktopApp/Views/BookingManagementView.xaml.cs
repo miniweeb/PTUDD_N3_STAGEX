@@ -37,33 +37,34 @@ namespace StageX_DesktopApp.Views
             };
         }
 
-        // Hàm tạo hình ảnh mã vạch (Barcode) từ chuỗi số
+        // --- HÀM TẠO MÃ VẠCH (BARCODE) ---
+        // Input: Mã vé (VD: "893123456789") -> Output: Hình ảnh mã vạch (XImage)
         private XImage GenerateBarcodeXImage(string content)
         {
             try
             {
+                // Sử dụng thư viện ZXing để tạo mã vạch
                 var writer = new BarcodeWriter
                 {
                     Format = BarcodeFormat.CODE_128,
                     Options = new EncodingOptions
                     {
-                        Height = 50,
-                        Width = 300,
-                        Margin = 0,
-                        PureBarcode = true
+                        Height = 50,  // Chiều cao mã vạch
+                        Width = 300,  // Chiều rộng
+                        Margin = 0,   // Không lề
+                        PureBarcode = true // Chỉ vẽ vạch, không vẽ số bên dưới (số ta tự vẽ sau cho đẹp)
                     }
                 };
 
+                // Tạo ảnh Bitmap từ chuỗi số
                 using (var bitmap = writer.Write(content))
                 {
-                    // LƯU Ý QUAN TRỌNG:
-                    // Không dùng 'using' cho MemoryStream ở đây vì stream cần tồn tại 
-                    // để XImage sử dụng sau khi hàm này return.
+                    // Chuyển Bitmap sang MemoryStream (PNG) để PDFSharp đọc được
                     var stream = new MemoryStream();
-
                     bitmap.Save(stream, ImageFormat.Png);
                     stream.Position = 0;
 
+                    // Trả về đối tượng ảnh của PDFSharp
                     return XImage.FromStream(stream);
                 }
             }
@@ -73,18 +74,19 @@ namespace StageX_DesktopApp.Views
             }
         }
 
-        // Hàm chính: Tạo và xuất file PDF vé
+        // --- HÀM CHÍNH: XUẤT VÉ RA PDF ---
         private void ExportTicketToPdf(BookingDisplayItem b)
         {
             try
             {
-                // Kiểm tra danh sách chi tiết vé
+                // Kiểm tra: Nếu đơn hàng không có vé nào thì không in
                 if (b.TicketDetails == null || b.TicketDetails.Count == 0)
                 {
                     MessageBox.Show("Không tìm thấy thông tin vé để in!");
                     return;
                 }
 
+                // 1. Tạo file PDF mới
                 PdfDocument document = new PdfDocument();
                 document.Info.Title = $"Ve_{b.BookingId}";
 
@@ -92,7 +94,7 @@ namespace StageX_DesktopApp.Views
                 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
                 XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.Unicode);
 
-                // Khai báo Font chữ
+                // 2. Cấu hình Font chữ và Bút vẽ
                 XFont fontTitle = new XFont("Arial", 18, XFontStyle.Bold, options);
                 XFont fontHeader = new XFont("Arial", 12, XFontStyle.Bold, options);
                 XFont fontNormal = new XFont("Arial", 10, XFontStyle.Regular, options);
@@ -105,7 +107,7 @@ namespace StageX_DesktopApp.Views
                 XBrush textGray = XBrushes.LightGray;
                 XPen linePen = new XPen(XColor.FromArgb(60, 60, 60), 1); // Đường kẻ xám
 
-                // Lặp qua từng vé trong danh sách chi tiết để tạo từng trang PDF
+                // 3. Vòng lặp: Mỗi vé (Ticket) sẽ được in trên 1 trang PDF riêng biệt
                 foreach (var ticket in b.TicketDetails)
                 {
                     // Tạo trang khổ A6 (105mm x 148mm)
@@ -117,18 +119,19 @@ namespace StageX_DesktopApp.Views
                     double margin = 12; double y = 5;
                     double pageWidth = page.Width;
 
-                    // Vẽ nền và khung viền vàng
+                    // Vẽ nền đen full trang
                     gfx.DrawRectangle(bgBrush, 0, 0, page.Width, page.Height);
+                    // Vẽ khung viền vàng bao quanh vé
                     gfx.DrawRectangle(new XPen(XColor.FromArgb(255, 193, 7), 2), margin, margin, pageWidth - margin * 2, page.Height - margin * 2);
 
-                    // 1. Vẽ Logo (nếu có)
+                    // --- VẼ LOGO ---
                     try
                     {
                         string logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "logo.png");
                         if (File.Exists(logoPath))
                         {
                             XImage logo = XImage.FromFile(logoPath);
-                            // Vẽ logo ở giữa, phía trên
+                            // Vẽ logo ở giữa phía trên, kích thước 40x40
                             gfx.DrawImage(logo, (pageWidth - 50) / 2, y, 50, 50);
                             y += 50;
                         }
@@ -136,7 +139,8 @@ namespace StageX_DesktopApp.Views
                     }
                     catch { y += 10; }
 
-                    // 2. Vẽ Tiêu đề Rạp
+                    // --- VẼ THÔNG TIN VÉ ---
+                    // Tiêu đề rạp
                     gfx.DrawString("STAGEX THEATER", fontTitle, textGold, new XRect(0, y, pageWidth, 20), XStringFormats.TopCenter);
                     y += 27;
                     gfx.DrawString("VÉ XEM KỊCH", fontHeader, textWhite, new XRect(0, y, pageWidth, 20), XStringFormats.TopCenter);

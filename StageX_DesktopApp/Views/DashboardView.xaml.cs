@@ -34,6 +34,9 @@ namespace StageX_DesktopApp.Views
                 await vm.LoadData();
             }
         }
+
+        // --- SỰ KIỆN: XỬ LÝ CÁC NÚT LỌC (TUẦN / THÁNG / NĂM) ---
+        // Logic này để ở View vì nó liên quan trực tiếp đến việc đổi màu nút bấm (UI)
         private async void FilterButton_Click(object sender, RoutedEventArgs e)
         {
             // Lấy ViewModel hiện tại
@@ -125,13 +128,12 @@ namespace StageX_DesktopApp.Views
             return result.AddDays(-3); // Trả về Thứ 2 đầu tuần
         }
 
-        //  CLICK NÚT XUẤT PDF
-
+        // --- CHỨC NĂNG CHÍNH: XUẤT BÁO CÁO PDF ---
         private async void BtnExportPdf_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Hiện màn hình chờ
+                // 1. Hiển thị màn hình chờ (Loading) để chặn người dùng bấm lung tung
                 LoadingOverlay.Visibility = Visibility.Visible;
                 ExportProgressBar.Value = 0;
                 ProgressStatusText.Text = "Đang khởi tạo...";
@@ -212,29 +214,38 @@ namespace StageX_DesktopApp.Views
             catch (Exception ex) { MessageBox.Show("Lỗi PDF: " + ex.Message); }
         }
 
+        // --- HÀM HỖ TRỢ: CHUYỂN ĐỔI (CHỤP) CONTROL WPF THÀNH ẢNH XIMAGE ---
+        // Input: UIElement (Control cần chụp), Width/Height (Kích thước ảnh đầu ra)
         private XImage CaptureChartToXImage(UIElement original, int width, int height)
         {
             try
             {
-                // 1) Clone element bằng VisualBrush
+                // BƯỚC 1: Clone (Sao chép) hình ảnh của Control bằng VisualBrush
+                // Tại sao phải làm bước này? Để đảm bảo ta có một bản vẽ sạch, không bị ảnh hưởng bởi các transform khác
                 var visual = new DrawingVisual();
                 using (var dc = visual.RenderOpen())
                 {
+                    // Vẽ lại control 'original' lên một hình chữ nhật ảo
                     dc.DrawRectangle(new VisualBrush(original), null, new Rect(0, 0, width, height));
                 }
 
-                // 2) Render visual clone, KHÔNG ảnh hưởng UI thật
+                // BƯỚC 2: Render (Kết xuất) bản vẽ ảo ra thành các điểm ảnh (Bitmap)
+                // RenderTargetBitmap là lớp của WPF dùng để biến Vector Graphics thành Raster Image (Pixel)
+                // DPI set là 96 (chuẩn màn hình Windows)
                 var bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
                 bmp.Render(visual);
 
-                // 3) Convert sang XImage
+                // BƯỚC 3: Chuyển đổi Bitmap WPF sang định dạng PNG
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(bmp));
 
+                // BƯỚC 4: Lưu PNG vào bộ nhớ (MemoryStream) và tạo XImage
                 using (var ms = new MemoryStream())
                 {
                     encoder.Save(ms);
                     ms.Position = 0;
+
+                    // Tạo XImage từ stream.
                     return XImage.FromStream(new MemoryStream(ms.ToArray()));
                 }
             }

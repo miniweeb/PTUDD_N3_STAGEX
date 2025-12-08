@@ -87,15 +87,10 @@ namespace StageX_DesktopApp.ViewModels
             {
                 // Bước 1: Lấy dữ liệu thô từ DB (Tháng, Doanh thu)
                 var rawData = await _dbService.GetRevenueMonthlyAsync();
-
                 var historyData = new List<RevenueInput>();
-
                 // Bước 2: Chuẩn hóa dữ liệu
-                // Dữ liệu từ DB có thể bị thiếu tháng (VD: có tháng 1, tháng 3 nhưng thiếu tháng 2)
-                // Cần lấp đầy các tháng thiếu bằng giá trị 0 để biểu đồ và thuật toán dự báo chạy đúng.
                 if (rawData.Any())
                 {
-                    // Parse chuỗi tháng (MM/yyyy) sang DateTime
                     var parsed = rawData.Select(r => {
                         if (DateTime.TryParse(r.month, out DateTime dt))
                             return new RevenueInput { Date = dt, TotalRevenue = (float)r.total_revenue };
@@ -103,10 +98,8 @@ namespace StageX_DesktopApp.ViewModels
                             return new RevenueInput { Date = dt2, TotalRevenue = (float)r.total_revenue };
                         return null;
                     }).Where(x => x != null).OrderBy(x => x.Date).ToList();
-
                     if (parsed.Any())
                     {
-                        // Lấp đầy các tháng còn thiếu
                         var minDate = parsed.First().Date;
                         var maxDate = parsed.Last().Date;
                         for (var d = minDate; d <= maxDate; d = d.AddMonths(1))
@@ -116,9 +109,7 @@ namespace StageX_DesktopApp.ViewModels
                         }
                     }
                 }
-
                 // Bước 3: Gọi ML.NET dự báo doanh thu tương lai
-                // Chỉ dự báo nếu có đủ dữ liệu lịch sử (>= 6 tháng)
                 bool canForecast = historyData.Count >= 6;
                 int horizon = 3;
                 RevenueForecast prediction = null;
@@ -132,7 +123,6 @@ namespace StageX_DesktopApp.ViewModels
                     }
                     catch { }
                 }
-
                 // Bước 4: Chuẩn bị dữ liệu vẽ biểu đồ
                 var chartValuesHistory = new ChartValues<double>();
                 var chartValuesForecast = new ChartValues<double>();
@@ -144,11 +134,8 @@ namespace StageX_DesktopApp.ViewModels
                     chartValuesForecast.Add(double.NaN);
                     labels.Add(item.Date.ToString("MM/yy"));
                 }
-
-                // 4b. Vẽ đường dự báo nối tiếp (nếu có)
                 if (prediction != null)
                 {
-                    // Nối điểm cuối của lịch sử vào đầu của dự báo để đường liền mạch
                     chartValuesForecast.RemoveAt(chartValuesForecast.Count - 1);
                     chartValuesForecast.Add(historyData.Last().TotalRevenue);
 
@@ -158,11 +145,9 @@ namespace StageX_DesktopApp.ViewModels
                         float val = prediction.ForecastedRevenue[i];
                         if (val < 0) val = 0;
                         chartValuesForecast.Add(val);
-                        // Thêm nhãn cho các tháng tương lai
                         labels.Add(lastDate.AddMonths(i + 1).ToString("MM/yy"));
                     }
                 }
-
                 // Bước 5: Cấu hình Series cho LiveCharts
                 RevenueSeries = new SeriesCollection
                 {
@@ -231,11 +216,11 @@ namespace StageX_DesktopApp.ViewModels
 
                     var item = data.FirstOrDefault(x => x.period == key);
                     double s = item != null ? (double)item.sold_tickets : 0;
-                    double u = item != null ? (double)item.unsold_tickets : 0; 
+                    double u = item != null ? (double)item.unsold_tickets : 0; // SỬA: Lấy số liệu thật
 
                     labels.Add(key);
                     sold.Add(s);
-                    unsold.Add(u); 
+                    unsold.Add(u); // SỬA: Add biến u
                 }
             }
             else // week
@@ -248,11 +233,11 @@ namespace StageX_DesktopApp.ViewModels
 
                     var item = data.FirstOrDefault(x => x.period == key);
                     double s = item != null ? (double)item.sold_tickets : 0;
-                    double u = item != null ? (double)item.unsold_tickets : 0; 
+                    double u = item != null ? (double)item.unsold_tickets : 0; // SỬA: Lấy số liệu thật
 
                     labels.Add(key);
                     sold.Add(s);
-                    unsold.Add(u); 
+                    unsold.Add(u); // SỬA: Add biến u
                 }
             }
 
