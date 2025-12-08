@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 08, 2025 at 06:11 PM
+-- Generation Time: Dec 08, 2025 at 07:03 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -35,57 +35,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_active_shows` ()   BEGIN
     WHERE status = 'Đang chiếu';
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_add_show_genre` (IN `in_show_id` INT, IN `in_genre_id` INT)   BEGIN
-    INSERT INTO show_genres (show_id, genre_id)
-    VALUES (in_show_id, in_genre_id);
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_approve_theater` (IN `in_theater_id` INT)   BEGIN
-    UPDATE theaters
-    SET status = 'Đã hoạt động'
-    WHERE theater_id = in_theater_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_available_seats` (IN `in_performance_id` INT)   BEGIN
-    SELECT s.seat_id,
-           s.row_char,
-           s.seat_number,
-           IFNULL(sc.category_name, '') AS category_name,
-           IFNULL(sc.base_price, 0)      AS base_price
-    FROM seats s
-    JOIN seat_performance sp ON sp.seat_id = s.seat_id
-    LEFT JOIN seat_categories sc ON sc.category_id = s.category_id
-    WHERE sp.performance_id = in_performance_id
-      AND sp.status = 'trống';
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_can_delete_seat_category` (IN `in_category_id` INT)   BEGIN
-    SELECT COUNT(*) AS cnt
-    FROM seats s
-    JOIN performances p ON s.theater_id = p.theater_id
-    WHERE s.category_id = in_category_id
-      AND p.status = 'Đang mở bán';
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_can_delete_theater` (IN `in_theater_id` INT)   BEGIN
-    SELECT COUNT(*) AS cnt
-    FROM performances
-    WHERE theater_id = in_theater_id
-      AND status = 'Đang mở bán';
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_chart_last_12_months` ()   BEGIN
-    SELECT 
-        DATE_FORMAT(p.performance_date, '%m/%Y') as period,
-        SUM(CASE WHEN sp.status != 'trống' THEN 1 ELSE 0 END) as sold_tickets,
-        SUM(CASE WHEN sp.status = 'trống' THEN 1 ELSE 0 END) as unsold_tickets
-    FROM performances p
-    JOIN seat_performance sp ON p.performance_id = sp.performance_id
-    WHERE p.performance_date >= DATE_SUB(NOW(), INTERVAL 11 MONTH)
-    GROUP BY YEAR(p.performance_date), MONTH(p.performance_date)
-    ORDER BY p.performance_date ASC;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_chart_last_4_weeks` ()   BEGIN
     SELECT 
         CONCAT('Tuần ', WEEK(b.created_at, 1)) as period,
@@ -114,54 +63,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_chart_last_7_days` ()   BEGIN
     ORDER BY b.created_at ASC;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_check_user_exists` (IN `in_email` VARCHAR(255), IN `in_account_name` VARCHAR(255))   BEGIN
-    SELECT COUNT(*) AS exists_count
-    FROM users
-    WHERE email = in_email OR account_name = in_account_name;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_count_performances_by_show` (IN `in_show_id` INT)   BEGIN
-    SELECT COUNT(*) AS performance_count
-    FROM performances
-    WHERE show_id = in_show_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_count_tickets_by_booking` (IN `in_booking_id` INT)   BEGIN
-    SELECT COUNT(*) AS ticket_count
-    FROM tickets
-    WHERE booking_id = in_booking_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_booking` (IN `p_user_id` INT, IN `p_performance_id` INT, IN `p_total` DECIMAL(10,2))   BEGIN
-   
-    INSERT INTO bookings (
-        user_id,
-        performance_id,
-        total_amount,
-        booking_status,
-        created_at
-    )
-    VALUES (
-        p_user_id,
-        p_performance_id,
-        p_total,
-        'Đang xử lý',
-        NOW()
-    );
-
-    SELECT LAST_INSERT_ID() AS booking_id;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_booking_pos` (IN `in_user_id` INT, IN `in_performance_id` INT, IN `in_total_amount` DECIMAL(10,2), IN `in_created_by` INT)   BEGIN
     INSERT INTO bookings (user_id, performance_id, total_amount, booking_status, created_at, created_by)
     VALUES (in_user_id, in_performance_id, in_total_amount, 'Đã hoàn thành', NOW(), in_created_by);
 
     SELECT LAST_INSERT_ID() AS booking_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_genre` (IN `in_name` VARCHAR(100))   BEGIN
-    INSERT INTO genres (genre_name) VALUES (in_name);
-    SELECT LAST_INSERT_ID() AS genre_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_payment` (IN `in_booking_id` INT, IN `in_amount` DECIMAL(10,3), IN `in_status` VARCHAR(20), IN `in_txn_ref` VARCHAR(255), IN `in_payment_method` VARCHAR(50))   BEGIN
@@ -186,38 +92,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_seat_category` (IN `in_
     INSERT INTO seat_categories (category_name, base_price, color_class)
     VALUES (in_name, in_base_price, in_color_class);
     SELECT LAST_INSERT_ID() AS category_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_show` (IN `in_title` VARCHAR(255), IN `in_description` TEXT, IN `in_duration` INT, IN `in_director` VARCHAR(255), IN `in_poster` VARCHAR(255), IN `in_status` VARCHAR(50))   BEGIN
-    INSERT INTO shows (title, description, duration_minutes, director, poster_image_url, status, created_at)
-    VALUES (in_title, in_description, in_duration, in_director, in_poster, in_status, NOW());
-    SELECT LAST_INSERT_ID() AS show_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_theater` (IN `in_name` VARCHAR(255), IN `in_rows` INT, IN `in_cols` INT)   BEGIN
- 
-    DECLARE new_tid INT;
-    DECLARE r INT DEFAULT 1;
-    DECLARE c INT;
-
-    INSERT INTO theaters (name, total_seats, status)
-    VALUES (in_name, in_rows * in_cols, 'Chờ xử lý');
-    SET new_tid = LAST_INSERT_ID();
-
-   
-    WHILE r <= in_rows DO
-        SET c = 1;
-        WHILE c <= in_cols DO
-            
-            INSERT INTO seats (theater_id, row_char, seat_number, real_seat_number, category_id)
-            VALUES (new_tid, CHAR(64 + r), c, c, NULL);
-            SET c = c + 1;
-        END WHILE;
-        SET r = r + 1;
-    END WHILE;
-
-   
-    SELECT new_tid AS theater_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_ticket` (IN `p_booking_id` INT, IN `p_seat_id` INT)   BEGIN
@@ -254,12 +128,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_ticket` (IN `p_booking_
     SELECT v_new_code AS new_ticket_code;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_user` (IN `in_email` VARCHAR(255), IN `in_password` VARCHAR(255), IN `in_account_name` VARCHAR(100), IN `in_user_type` VARCHAR(20), IN `in_verified` TINYINT(1))   BEGIN
-    INSERT INTO users (email, password, account_name, user_type, status, is_verified)
-    VALUES (in_email, in_password, in_account_name, in_user_type, 'hoạt động', in_verified);
-    SELECT LAST_INSERT_ID() AS user_id;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_dashboard_summary` ()   BEGIN
     SELECT 
         (SELECT COALESCE(SUM(total_amount), 0) FROM bookings b JOIN payments p ON b.booking_id = p.booking_id WHERE p.status = 'Thành công') as total_revenue,
@@ -276,11 +144,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_genre` (IN `in_id` INT)
     DELETE FROM genres WHERE genre_id = in_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_performance_if_ended` (IN `in_performance_id` INT)   BEGIN
-    DELETE FROM performances
-    WHERE performance_id = in_performance_id AND status = 'Đã kết thúc';
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_seats_by_theater` (IN `in_theater_id` INT)   BEGIN
     DELETE FROM seats WHERE theater_id = in_theater_id;
 END$$
@@ -291,10 +154,6 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_show` (IN `in_show_id` INT)   BEGIN
     DELETE FROM shows WHERE show_id = in_show_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_show_genres` (IN `in_show_id` INT)   BEGIN
-    DELETE FROM show_genres WHERE show_id = in_show_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_theater` (IN `in_theater_id` INT)   BEGIN
@@ -320,33 +179,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_user_safe` (IN `in_user
     END IF;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_expire_pending_payments` ()   BEGIN
-  
-    UPDATE payments p
-    JOIN bookings b ON p.booking_id = b.booking_id
-    SET p.status = 'Thất bại',
-        p.updated_at = NOW(),
-        b.booking_status = 'Đã hủy'
-    WHERE p.status = 'Đang chờ'
-      AND TIMESTAMPDIFF(MINUTE, p.created_at, NOW()) >= 15;
-
-    UPDATE tickets t
-    JOIN payments p2 ON p2.booking_id = t.booking_id
-    SET t.status = 'Đã hủy'
-    WHERE p2.status = 'Thất bại'
-      AND TIMESTAMPDIFF(MINUTE, p2.created_at, NOW()) >= 15
-      AND t.status IN ('Đang chờ', 'Hợp lệ');
-
-    UPDATE seat_performance sp
-    JOIN tickets t2 ON sp.seat_id = t2.seat_id
-    JOIN payments p3 ON p3.booking_id = t2.booking_id
-    JOIN bookings b2 ON b2.booking_id = p3.booking_id
-    SET sp.status = 'trống'
-    WHERE p3.status = 'Thất bại'
-      AND TIMESTAMPDIFF(MINUTE, p3.created_at, NOW()) >= 15
-      AND sp.performance_id = b2.performance_id;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_actors` (IN `in_keyword` VARCHAR(255))   BEGIN
     SELECT * -- Lấy hết các cột mới
     FROM actors
@@ -357,254 +189,18 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_actors` (IN `in_keyword` V
     ORDER BY actor_id DESC;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_admin_staff_users` ()   BEGIN
-    SELECT *
-    FROM users
-    WHERE user_type IN ('Nhân viên','Admin')
-    ORDER BY user_id ASC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_bookings` ()   BEGIN
-    SELECT b.*, u.email
-    FROM bookings b
-    JOIN users u ON b.user_id = u.user_id
-    ORDER BY b.created_at DESC;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_genres` ()   BEGIN
    
     SELECT * FROM genres ORDER BY genre_id ASC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_performances_detailed` ()   BEGIN
-    SELECT p.*, s.title, t.name AS theater_name
-    FROM performances p
-    JOIN shows s ON p.show_id = s.show_id
-    JOIN theaters t ON p.theater_id = t.theater_id
-    ORDER BY p.performance_date, p.start_time;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_seat_categories` ()   BEGIN
     SELECT * FROM seat_categories ORDER BY category_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_shows` ()   BEGIN
-    SELECT s.*, GROUP_CONCAT(g.genre_name SEPARATOR ', ') AS genres
-    FROM shows s
-    LEFT JOIN show_genres sg ON s.show_id = sg.show_id
-    LEFT JOIN genres g ON sg.genre_id = g.genre_id
-    GROUP BY s.show_id
-    ORDER BY s.created_at DESC;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_all_theaters` ()   BEGIN
 
     SELECT * FROM theaters ORDER BY theater_id ASC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_booked_seat_ids` (IN `in_performance_id` INT)   BEGIN
-
-    SELECT sp.seat_id
-    FROM seat_performance sp
-    WHERE sp.performance_id = in_performance_id
-      AND sp.status = 'đã đặt';
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_bookings_by_user` (IN `in_user_id` INT)   BEGIN
-    SELECT * FROM bookings
-    WHERE user_id = in_user_id
-    ORDER BY created_at DESC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_booking_with_tickets` (IN `in_booking_id` INT)   BEGIN
- 
-    SELECT b.*, t.ticket_id, t.ticket_code, s.row_char, s.real_seat_number AS seat_number,
-           sc.category_name, sc.color_class,
-           (p.price + sc.base_price) AS ticket_price
-    FROM bookings b
-    LEFT JOIN tickets t ON b.booking_id = t.booking_id
-    LEFT JOIN seats s ON t.seat_id = s.seat_id
-    LEFT JOIN seat_categories sc ON s.category_id = sc.category_id
-    LEFT JOIN performances p ON b.performance_id = p.performance_id
-    WHERE b.booking_id = in_booking_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_genres` ()   BEGIN
-    SELECT * FROM genres ORDER BY genre_name;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_genre_ids_by_show` (IN `in_show_id` INT)   BEGIN
-    SELECT genre_id
-    FROM show_genres
-    WHERE show_id = in_show_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_payments_by_booking` (IN `in_booking_id` INT)   BEGIN
-    SELECT * FROM payments WHERE booking_id = in_booking_id ORDER BY created_at ASC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_payment_by_txn` (IN `in_txn_ref` VARCHAR(255))   BEGIN
-    SELECT * FROM payments WHERE vnp_txn_ref = in_txn_ref LIMIT 1;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_performances_by_show` (IN `in_show_id` INT)   BEGIN
-    SELECT p.*, t.name AS theater_name
-    FROM performances p
-    JOIN theaters t ON p.theater_id = t.theater_id
- 
-    WHERE p.show_id = in_show_id AND p.status = 'Đang mở bán'
-    ORDER BY p.performance_date, p.start_time;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_performance_by_id` (IN `in_performance_id` INT)   BEGIN
-    SELECT p.*, t.name AS theater_name
-    FROM performances p
-    JOIN theaters t ON p.theater_id = t.theater_id
-    WHERE p.performance_id = in_performance_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_performance_detailed_by_id` (IN `in_performance_id` INT)   BEGIN
-    SELECT p.*, s.title, t.name AS theater_name
-    FROM performances p
-    JOIN shows s ON p.show_id = s.show_id
-    JOIN theaters t ON p.theater_id = t.theater_id
-    WHERE p.performance_id = in_performance_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_seats_for_theater` (IN `in_theater_id` INT)   BEGIN
-  
-    SELECT
-        s.seat_id,
-        s.theater_id,
-        s.category_id,
-        s.row_char,
-        s.seat_number,
-        s.real_seat_number,
-        s.created_at,
-        c.category_name,
-        c.base_price,
-        c.color_class
-    FROM seats s
-    LEFT JOIN seat_categories c ON s.category_id = c.category_id
-    WHERE s.theater_id = in_theater_id
-    ORDER BY s.row_char, s.seat_number;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_seat_categories` ()   BEGIN
-    SELECT category_id, category_name, base_price, color_class
-    FROM seat_categories
-    ORDER BY category_id ASC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_seat_category_by_id` (IN `in_category_id` INT)   BEGIN
-    SELECT * FROM seat_categories WHERE category_id = in_category_id LIMIT 1;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_seat_category_by_price` (IN `in_base_price` DECIMAL(10,3))   BEGIN
-    SELECT * FROM seat_categories WHERE base_price = in_base_price LIMIT 1;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_show_by_id` (IN `in_show_id` INT)   BEGIN
-    SELECT s.*, GROUP_CONCAT(g.genre_name SEPARATOR ', ') AS genres
-    FROM shows s
-    LEFT JOIN show_genres sg ON s.show_id = sg.show_id
-    LEFT JOIN genres g ON sg.genre_id = g.genre_id
-    WHERE s.show_id = in_show_id
-    GROUP BY s.show_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_staff_users` ()   BEGIN
-    SELECT * FROM users WHERE user_type = 'Nhân viên' ORDER BY user_id ASC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_user_bookings_detailed` (IN `in_user_id` INT)   BEGIN
-  
-    SELECT b.*, GROUP_CONCAT(CONCAT(s.row_char, s.real_seat_number) ORDER BY s.row_char, s.seat_number SEPARATOR ', ') AS seats
-    FROM bookings b
-    LEFT JOIN tickets t ON b.booking_id = t.booking_id
-    LEFT JOIN seats s ON t.seat_id = s.seat_id
-    WHERE b.user_id = in_user_id
-    GROUP BY b.booking_id
-    ORDER BY b.created_at DESC;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_user_by_account_name` (IN `in_account_name` VARCHAR(100))   BEGIN
-    SELECT * FROM users WHERE account_name = in_account_name LIMIT 1;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_user_by_email` (IN `in_email` VARCHAR(255))   BEGIN
-    SELECT * FROM users WHERE email = in_email LIMIT 1;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_user_by_id` (IN `in_user_id` INT)   BEGIN
-    SELECT * FROM users WHERE user_id = in_user_id LIMIT 1;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_user_detail_by_id` (IN `in_user_id` INT)   BEGIN
-    SELECT * FROM user_detail WHERE user_id = in_user_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_insert_actor` (IN `in_full_name` VARCHAR(255), IN `in_date_of_birth` DATE, IN `in_gender` VARCHAR(10), IN `in_nick_name` VARCHAR(255), IN `in_email` VARCHAR(255), IN `in_phone` VARCHAR(20), IN `in_status` VARCHAR(50))   BEGIN
-    INSERT INTO actors (full_name, date_of_birth, gender, nick_name, email, phone, status, created_at)
-    VALUES (in_full_name, in_date_of_birth, in_gender, in_nick_name, in_email, in_phone, in_status, NOW());
-    SELECT LAST_INSERT_ID() AS actor_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_modify_theater_size` (IN `in_theater_id` INT, IN `in_add_rows` INT, IN `in_add_cols` INT)   BEGIN
-    DECLARE maxRowChar CHAR(1);
-    DECLARE oldRows INT;
-    DECLARE oldCols INT;
-    DECLARE r INT;
-    DECLARE c INT;
-    DECLARE addc INT;
- 
-    SELECT MAX(row_char) INTO maxRowChar FROM seats WHERE theater_id = in_theater_id;
-    IF maxRowChar IS NULL THEN
-        SET oldRows = 0;
-    ELSE
-        SET oldRows = ASCII(maxRowChar) - 64;
-    END IF;
-    SELECT MAX(seat_number) INTO oldCols FROM seats WHERE theater_id = in_theater_id;
-    IF oldCols IS NULL THEN
-        SET oldCols = 0;
-    END IF;
-  
-    IF in_add_rows > 0 THEN
-        SET r = oldRows + 1;
-        WHILE r <= oldRows + in_add_rows DO
-            SET c = 1;
-            WHILE c <= oldCols DO
-                INSERT INTO seats (theater_id, row_char, seat_number, real_seat_number, category_id)
-                VALUES (in_theater_id, CHAR(64 + r), c, c, NULL);
-                SET c = c + 1;
-            END WHILE;
-            SET r = r + 1;
-        END WHILE;
-    END IF;
- 
-    IF in_add_rows < 0 THEN
-        DELETE FROM seats
-        WHERE theater_id = in_theater_id
-          AND (ASCII(row_char) - 64) > oldRows + in_add_rows;
-    END IF;
-  
-    IF in_add_cols > 0 THEN
-        SET addc = 1;
-        WHILE addc <= in_add_cols DO
-            INSERT INTO seats (theater_id, row_char, seat_number, real_seat_number, category_id)
-            SELECT in_theater_id, row_char, oldCols + addc, oldCols + addc, NULL
-            FROM (SELECT DISTINCT row_char FROM seats WHERE theater_id = in_theater_id) AS row_list;
-            SET addc = addc + 1;
-        END WHILE;
-    END IF;
-
-    IF in_add_cols < 0 THEN
-        DELETE FROM seats
-        WHERE theater_id = in_theater_id
-          AND seat_number > oldCols + in_add_cols;
-    END IF;
-
-    CALL proc_update_theater_seat_counts();
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_performances_by_show` (IN `in_show_id` INT)   BEGIN
@@ -703,51 +299,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_seats_with_status` (IN `in_per
     WHERE sp.performance_id = in_performance_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_set_user_otp` (IN `in_user_id` INT, IN `in_otp_code` VARCHAR(10), IN `in_expires` DATETIME)   BEGIN
-    UPDATE users
-    SET otp_code = in_otp_code,
-        otp_expires_at = in_expires
-    WHERE user_id = in_user_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_sold_tickets_daily` ()   BEGIN
-    /*
-      Trả về danh sách số lượng vé đã bán theo từng ngày.
-      Vé được coi là đã bán khi status nằm trong ('Hợp lệ','Đã sử dụng').
-    */
-    SELECT DATE_FORMAT(t.created_at, '%Y-%m-%d') AS period,
-           COUNT(*) AS sold_tickets
-    FROM tickets t
-    WHERE t.status IN ('Hợp lệ','Đã sử dụng')
-    GROUP BY DATE_FORMAT(t.created_at, '%Y-%m-%d')
-    ORDER BY DATE_FORMAT(t.created_at, '%Y-%m-%d');
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_sold_tickets_monthly` ()   BEGIN
-    /*
-      Trả về số lượng vé bán cho mỗi tháng (yyyy-mm).
-    */
-    SELECT DATE_FORMAT(t.created_at, '%Y-%m') AS period,
-           COUNT(*) AS sold_tickets
-    FROM tickets t
-    WHERE t.status IN ('Hợp lệ','Đã sử dụng')
-    GROUP BY DATE_FORMAT(t.created_at, '%Y-%m')
-    ORDER BY DATE_FORMAT(t.created_at, '%Y-%m');
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_sold_tickets_weekly` ()   BEGIN
-    /*
-      Trả về số lượng vé bán cho mỗi tuần ISO (năm và số tuần).
-      period trả về dạng YEARWEEK ISO.
-    */
-    SELECT CONVERT(YEARWEEK(t.created_at, 3), CHAR) AS period,
-           COUNT(*) AS sold_tickets
-    FROM tickets t
-    WHERE t.status IN ('Hợp lệ','Đã sử dụng')
-    GROUP BY YEARWEEK(t.created_at, 3)
-    ORDER BY YEARWEEK(t.created_at, 3);
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_sold_tickets_yearly` ()   BEGIN
     SELECT 
         CONVERT(YEAR(t.created_at), CHAR) AS period,
@@ -757,21 +308,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_sold_tickets_yearly` ()   BEGI
     WHERE t.status IN ('Hợp lệ','Đã sử dụng')
     GROUP BY YEAR(t.created_at)
     ORDER BY YEAR(t.created_at);
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_top3_nearest_performances` ()   BEGIN
-    -- Cập nhật trạng thái suất diễn và vở diễn để đảm bảo dữ liệu chính xác
-    CALL proc_update_statuses();
-    -- Lấy các suất đang mở bán hoặc đang diễn, sắp xếp tăng dần theo ngày giờ bắt đầu, giới hạn 3 suất
-    SELECT performance_id,
-           performance_date,
-           start_time,
-           end_time,
-           price
-    FROM performances
-    WHERE status IN ('Đang mở bán','Đang diễn')
-    ORDER BY CONCAT(performance_date, ' ', start_time) ASC
-    LIMIT 3;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_top3_nearest_performances_extended` ()   BEGIN
@@ -813,136 +349,12 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_top5_shows_by_date_range` (IN 
     LIMIT 5;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_top5_shows_by_tickets` ()   BEGIN
-    SELECT 
-        s.title as show_name, 
-        COUNT(t.ticket_id) as sold_tickets
-    FROM shows s
-    JOIN performances p ON s.show_id = p.show_id
-    JOIN bookings b ON p.performance_id = b.performance_id
-    JOIN tickets t ON b.booking_id = t.booking_id
-    JOIN payments pay ON b.booking_id = pay.booking_id
-    WHERE pay.status = 'Thành công'
-    GROUP BY s.show_id
-    ORDER BY sold_tickets DESC
-    LIMIT 5;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_actor` (IN `in_actor_id` INT, IN `in_full_name` VARCHAR(255), IN `in_date_of_birth` DATE, IN `in_gender` VARCHAR(10), IN `in_nick_name` VARCHAR(255), IN `in_email` VARCHAR(255), IN `in_phone` VARCHAR(20), IN `in_status` VARCHAR(50))   BEGIN
-    UPDATE actors
-    SET full_name = in_full_name,
-        date_of_birth = in_date_of_birth,
-        gender = in_gender,
-        nick_name = in_nick_name,
-        email = in_email,
-        phone = in_phone,
-        status = in_status
-    WHERE actor_id = in_actor_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_booking_status` (IN `in_booking_id` INT, IN `in_booking_status` VARCHAR(20))   BEGIN
-    UPDATE bookings
-    SET booking_status = in_booking_status
-    WHERE booking_id = in_booking_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_genre` (IN `in_id` INT, IN `in_name` VARCHAR(100))   BEGIN
-    UPDATE genres
-    SET genre_name = in_name
-    WHERE genre_id = in_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_payment_status` (IN `in_txn_ref` VARCHAR(255), IN `in_status` VARCHAR(20), IN `in_bank_code` VARCHAR(255), IN `in_pay_date` VARCHAR(255))   BEGIN
-
-    UPDATE payments
-    SET status = in_status,
-        vnp_bank_code = in_bank_code,
-        vnp_pay_date = in_pay_date,
-        updated_at = NOW()
-    WHERE vnp_txn_ref = in_txn_ref;
-
-    IF in_status = 'Thất bại' THEN
-      
-        UPDATE bookings b
-        JOIN payments p ON p.booking_id = b.booking_id
-        SET b.booking_status = 'Đã hủy'
-        WHERE p.vnp_txn_ref = in_txn_ref;
-
-        UPDATE tickets t
-        JOIN payments p2 ON p2.booking_id = t.booking_id
-        SET t.status = 'Đã hủy'
-        WHERE p2.vnp_txn_ref = in_txn_ref
-          AND t.status IN ('Đang chờ','Hợp lệ');
-
-        UPDATE seat_performance sp
-        JOIN tickets t2 ON sp.seat_id = t2.seat_id
-        JOIN payments p3 ON p3.booking_id = t2.booking_id
-        JOIN bookings b2 ON b2.booking_id = p3.booking_id
-        SET sp.status = 'trống'
-        WHERE p3.vnp_txn_ref = in_txn_ref
-          AND sp.performance_id = b2.performance_id;
-    END IF;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_performance_statuses` ()   BEGIN
-    UPDATE performances
-    SET status = 'Đã kết thúc'
-    WHERE status NOT IN ('Đã kết thúc','Đã hủy')
-      AND (
-        performance_date < CURDATE()
-        OR (performance_date = CURDATE() AND end_time IS NOT NULL AND end_time < CURTIME())
-      );
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_performance_status_single` (IN `in_performance_id` INT, IN `in_status` VARCHAR(20))   BEGIN
-    UPDATE performances
-    SET status = in_status
-    WHERE performance_id = in_performance_id;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_seat_category` (IN `in_category_id` INT, IN `in_name` VARCHAR(100), IN `in_base_price` DECIMAL(10,3), IN `in_color_class` VARCHAR(50))   BEGIN
     UPDATE seat_categories
     SET category_name = in_name,
         base_price    = in_base_price,
         color_class   = in_color_class
     WHERE category_id = in_category_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_seat_category_range` (IN `in_theater_id` INT, IN `in_row_char` CHAR(1), IN `in_start_seat` INT, IN `in_end_seat` INT, IN `in_category_id` INT)   BEGIN
- 
-    UPDATE seats
-    SET category_id = IF(in_category_id = 0, NULL, in_category_id)
-    WHERE theater_id = in_theater_id
-      AND row_char = in_row_char
-      AND seat_number BETWEEN in_start_seat AND in_end_seat;
-
-    SET @rn := 0;
-    UPDATE seats s
-    JOIN (
-        SELECT seat_id, (@rn := @rn + 1) AS new_num
-        FROM seats
-        WHERE theater_id = in_theater_id
-          AND row_char = in_row_char
-          AND category_id IS NOT NULL
-        ORDER BY seat_number
-    ) AS ordered ON s.seat_id = ordered.seat_id
-    SET s.real_seat_number = ordered.new_num;
-
-    UPDATE seats
-    SET real_seat_number = 0
-    WHERE theater_id = in_theater_id
-      AND row_char = in_row_char
-      AND category_id IS NULL;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_show_details` (IN `in_show_id` INT, IN `in_title` VARCHAR(255), IN `in_description` TEXT, IN `in_duration` INT, IN `in_director` VARCHAR(255), IN `in_poster` VARCHAR(255))   BEGIN
-    UPDATE shows
-    SET title            = in_title,
-        description      = in_description,
-        duration_minutes = in_duration,
-        director         = in_director,
-        poster_image_url = in_poster
-    WHERE show_id = in_show_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_show_statuses` ()   BEGIN
@@ -955,14 +367,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_show_statuses` ()   BEG
             ELSE 'Đang chiếu'
         END
     );
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_staff_user` (IN `in_user_id` INT, IN `in_account_name` VARCHAR(100), IN `in_email` VARCHAR(255), IN `in_status` VARCHAR(50))   BEGIN
-    UPDATE users
-    SET account_name = in_account_name,
-        email        = in_email,
-        status       = in_status
-    WHERE user_id = in_user_id AND user_type = 'Nhân viên';
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_statuses` ()   BEGIN
@@ -991,37 +395,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_statuses` ()   BEGIN
     );
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_theater` (IN `in_theater_id` INT, IN `in_name` VARCHAR(255))   BEGIN
-    UPDATE theaters
-    SET name = in_name
-    WHERE theater_id = in_theater_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_theater_seat_counts` ()   BEGIN
-    UPDATE theaters t
-    LEFT JOIN (
-        SELECT theater_id, COUNT(seat_id) AS total_seats
-        FROM seats
-        GROUP BY theater_id
-    ) AS seat_count
-    ON t.theater_id = seat_count.theater_id
-    SET t.total_seats = COALESCE(seat_count.total_seats, 0);
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_unverified_user_password_email` (IN `in_user_id` INT, IN `in_password` VARCHAR(255), IN `in_email` VARCHAR(255))   BEGIN
-    UPDATE users
-    SET password = in_password,
-        email = in_email
-    WHERE user_id = in_user_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_unverified_user_password_name` (IN `in_user_id` INT, IN `in_password` VARCHAR(255), IN `in_account_name` VARCHAR(100))   BEGIN
-    UPDATE users
-    SET password = in_password,
-        account_name = in_account_name
-    WHERE user_id = in_user_id;
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_user_password` (IN `in_user_id` INT, IN `in_password` VARCHAR(255))   BEGIN
     UPDATE users
     SET password = in_password,
@@ -1038,25 +411,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_upsert_user_detail` (IN `in_us
         date_of_birth = VALUES(date_of_birth),
         address       = VALUES(address),
         phone         = VALUES(phone);
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_verify_user_otp` (IN `in_user_id` INT, IN `in_otp_code` VARCHAR(10))   BEGIN
-    DECLARE v INT DEFAULT 0;
-    SELECT CASE
-            WHEN otp_code = in_otp_code AND otp_expires_at >= NOW() THEN 1
-            ELSE 0
-        END AS verified
-    INTO v
-    FROM users
-    WHERE user_id = in_user_id;
-    IF v = 1 THEN
-        UPDATE users
-        SET is_verified = 1,
-            otp_code = NULL,
-            otp_expires_at = NULL
-        WHERE user_id = in_user_id;
-    END IF;
-    SELECT v AS verified;
 END$$
 
 DELIMITER ;

@@ -48,9 +48,6 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Có thể dùng LINQ hoặc SP. Dùng SP proc_check_user_exists cho tối ưu
-                // Tuy nhiên hàm SP này trả về Count, cần execute scalar. 
-                // Để đơn giản và an toàn với EF Core, đoạn check này dùng LINQ vẫn rất nhanh.
                 return await context.Users.AnyAsync(u => u.Email == email || u.AccountName == accountName);
             }
         }
@@ -462,9 +459,6 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // SP proc_get_seats_for_theater đã tồn tại và join sẵn category
-                // Tuy nhiên Model Seat cần map đúng. Nếu SP trả về cột khác Model -> Lỗi.
-                // Ở đây giữ LINQ Include cho an toàn với Model Seat hiện tại.
                 return await context.Seats
                     .Where(s => s.TheaterId == theaterId)
                     .Include(s => s.SeatCategory)
@@ -474,7 +468,7 @@ namespace StageX_DesktopApp.Services
         }
 
         /// <summary>
-        /// Tạo Rạp mới kèm danh sách ghế (Dùng SP proc_create_theater)
+        /// Tạo Rạp mới kèm danh sách ghế
         /// </summary>
         public async Task SaveNewTheaterAsync(Theater theater, List<Seat> seats)
         {
