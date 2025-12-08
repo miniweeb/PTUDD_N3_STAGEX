@@ -22,51 +22,50 @@
         <!--Tạo row hiện Tiêu đề -->
         <TextBlock Grid.Row="0" Text="QUẢN LÝ TÀI KHOẢN" FontSize="24" Foreground="#FFffc107" FontWeight="Bold" Margin="0,0,0,15"/>
         <!--Tạo row hiện các textbox thêm/chỉnh sửa thông tin -->
-        <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="5" 
-                Padding="15" Margin="0,0,0,10">
+        <Border Grid.Row="1" Background="#FF0C1220" CornerRadius="8" Padding="20" Margin="0,0,0,15">
             <StackPanel>
-                <TextBlock Text="{Binding FormTitle}" FontSize="18" 
-                           FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#FFffc107"/>
+                <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="SemiBold" 
+                   Foreground="#FFffc107" Margin="0,0,0,15"/>
 
-                <Grid >
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="15"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Margin="5,0,5,0">
-                        <TextBlock Text="Tên tài khoản:" Margin="0,5,0,5" Foreground="Gray"/>
-                        <TextBox Text="{Binding AccountName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsDetailEditable}"/>
+                    <StackPanel Grid.Row="0" Grid.Column="0">
+                        <TextBlock Text="Tên tài khoản:" Margin="0,0,0,5" Foreground="Gray"/>
+                        <TextBox Text="{Binding AccountName, UpdateSourceTrigger=PropertyChanged}" 
+                         IsEnabled="{Binding IsDetailEditable}" 
+                         Style="{StaticResource InputStyle}"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Margin="5,0,5,0">
-                        <TextBlock Text="Email:" Margin="0,5,0,5" Foreground="Gray"/>
-                        <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsDetailEditable}"/>
+                    <StackPanel Grid.Row="0" Grid.Column="2">
+                        <TextBlock Text="Email:" Margin="0,0,0,5" Foreground="Gray"/>
+                        <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" 
+                         IsEnabled="{Binding IsDetailEditable}" 
+                         Style="{StaticResource InputStyle}"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                        <TextBlock Text="Mật khẩu:" Margin="0,5,0,5" Foreground="Gray"/>
-                        <PasswordBox x:Name="PasswordBox" IsEnabled="{Binding IsDetailEditable}"/>
-                    </StackPanel>
-                </Grid>
-
-                <Grid Margin="0,15,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="0.7*"/>
-                        <ColumnDefinition Width="0.7*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Margin="5,0,15,0">
-                        <TextBlock Text="Họ tên:" Margin="0,0,0,5" Foreground="Gray"/>
-                        <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" 
-                 IsEnabled="{Binding IsDetailEditable}" 
-                 Style="{StaticResource InputStyle}"/>
+                    <StackPanel Grid.Row="0" Grid.Column="4">
+                        <TextBlock Text="Mật khẩu:" Margin="0,0,0,5" Foreground="Gray"/>
+                        <PasswordBox x:Name="PasswordBox" 
+                             IsEnabled="{Binding IsDetailEditable}" 
+                             Style="{StaticResource InputStyle}"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Margin="0,0,15,0">
+                    <StackPanel Grid.Row="0" Grid.Column="6">
                         <TextBlock Text="Vai trò:" Margin="0,0,0,5" Foreground="Gray"/>
                         <ComboBox SelectedIndex="{Binding RoleIndex}" Padding="8" Style="{StaticResource InputStyle}">
                             <ComboBoxItem Content="Nhân viên"/>
@@ -74,30 +73,46 @@
                         </ComboBox>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2" Margin="0,0,15,0">
+
+                    <StackPanel Grid.Row="2" Grid.Column="0">
+                        <TextBlock Text="Họ tên:" Margin="0,0,0,5" Foreground="Gray"/>
+                        <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource InputStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="2">
+                        <TextBlock Text="Ngày sinh:" Margin="0,0,0,5" Foreground="Gray"/>
+                        <DatePicker SelectedDate="{Binding DateOfBirth}" 
+                            Style="{StaticResource InputStyle}"
+                            HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="4">
                         <TextBlock Text="Trạng thái:" Margin="0,0,0,5" Foreground="Gray"/>
                         <ComboBox SelectedIndex="{Binding StatusIndex}" 
-                  IsEnabled="{Binding IsStatusEnabled}" 
-                  Padding="8" 
-                  Style="{StaticResource InputStyle}">
+                          IsEnabled="{Binding IsStatusEnabled}" 
+                          Padding="8" 
+                          Style="{StaticResource InputStyle}">
                             <ComboBoxItem Content="hoạt động"/>
                             <ComboBoxItem Content="khóa"/>
                         </ComboBox>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <StackPanel Grid.Row="2" Grid.Column="6" Orientation="Horizontal" 
+                        HorizontalAlignment="Right" VerticalAlignment="Bottom">
 
                         <Button Content="{Binding SaveBtnContent}" 
-                Style="{StaticResource ButtonAddStyle}" 
-                Width="140" Height="32" 
-                Click="SaveButton_Click"/>
+                        Style="{StaticResource ButtonAddStyle}" 
+                        Width="120" Height="32" 
+                        Click="SaveButton_Click"/>
 
                         <Button Content="Làm mới" 
-                Command="{Binding ClearCommand}" 
-                Style="{StaticResource ButtonNormalStyle}" 
-                Margin="10,0,0,0" 
-                Width="100" Height="32"/>
+                        Command="{Binding ClearCommand}" 
+                        Style="{StaticResource ButtonNormalStyle}" 
+                        Margin="10,0,0,0" 
+                        Width="100" Height="32"/>
                     </StackPanel>
+
                 </Grid>
             </StackPanel>
         </Border>
@@ -114,9 +129,10 @@
                   RowHeight="30">
             <!--Tạo hàng đầu gồm tên các cột dữ liệu -->
             <DataGrid.Columns>
-                <DataGridTextColumn Header="HỌ TÊN" Binding="{Binding UserDetail.FullName}" Width="1.5*"/>
-                <DataGridTextColumn Header="TÊN TÀI KHOẢN" Binding="{Binding AccountName}" Width="*"/>
-                <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="2*"/>
+                <DataGridTextColumn Header="HỌ TÊN" Binding="{Binding UserDetail.FullName}" Width="1.5*" ElementStyle="{StaticResource LeftCell}"/>
+                <DataGridTextColumn Header="NGÀY SINH" Binding="{Binding UserDetail.DateOfBirth, StringFormat='dd/MM/yyyy'}" Width="100" ElementStyle="{StaticResource CenterCell}"/>
+                <DataGridTextColumn Header="TÊN TÀI KHOẢN" Binding="{Binding AccountName}" Width="*" ElementStyle="{StaticResource LeftCell}"/>
+                <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="2*" ElementStyle="{StaticResource LeftCell}"/>
                 <DataGridTextColumn Header="VAI TRÒ" Binding="{Binding Role}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
                 <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding Status}" Width="*" ElementStyle="{StaticResource CenterCell}"/>
                 <!--Tạo cột Hành động gồm các button Sửa/Xóa -->

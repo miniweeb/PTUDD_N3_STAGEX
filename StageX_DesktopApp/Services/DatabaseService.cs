@@ -81,6 +81,7 @@ namespace StageX_DesktopApp.Services
                         }
                         // Cập nhật họ tên mới từ ViewModel gửi xuống
                         dbUser.UserDetail.FullName = user.UserDetail.FullName;
+                        dbUser.UserDetail.DateOfBirth = user.UserDetail.DateOfBirth;
                     }
                 }
                 else

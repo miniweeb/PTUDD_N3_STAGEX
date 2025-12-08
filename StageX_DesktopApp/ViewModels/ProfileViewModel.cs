@@ -55,7 +55,7 @@ namespace StageX_DesktopApp.ViewModels
                 Address = user.UserDetail.Address;
                 Phone = user.UserDetail.Phone;
                 // Nếu ngày sinh null thì lấy ngày hiện tại
-                DateOfBirth = user.UserDetail.DateOfBirth ?? DateTime.Now;
+                DateOfBirth = user.UserDetail.DateOfBirth;
             }
             _originalState = (FullName, Address, Phone, DateOfBirth);
         }
@@ -63,7 +63,7 @@ namespace StageX_DesktopApp.ViewModels
         [RelayCommand]
         private async Task SaveInfo()
         {
-            // 1. [CHECK] Bắt buộc nhập tên
+            // 1. [CHECK] Bắt buộc nhập tên và ngày sinh
             if (string.IsNullOrWhiteSpace(FullName))
             {
                 MessageBox.Show("Vui lòng nhập Họ tên!", "Nhắc nhở", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -71,6 +71,14 @@ namespace StageX_DesktopApp.ViewModels
                 return;
             }
 
+            if (DateOfBirth.Date > DateTime.Now.Date)
+            {
+                MessageBox.Show("Ngày sinh không hợp lệ (không được lớn hơn hôm nay)!", "Lỗi nhập liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                // Hoàn tác về ngày sinh cũ (Nếu null thì lấy ngày hiện tại)
+                DateOfBirth = _originalState.Dob ?? DateTime.Now;
+                return;
+            }
             // 2. [CHECK] Kiểm tra có thay đổi không? (So sánh với _originalState)
             bool isChanged = FullName != _originalState.Name ||
                              Address != _originalState.Address ||

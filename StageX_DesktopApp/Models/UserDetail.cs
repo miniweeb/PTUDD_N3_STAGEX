@@ -13,7 +13,7 @@ namespace StageX_DesktopApp.Models
         [Column("full_name")]
         public string FullName { get; set; }
         [Column("date_of_birth")]
-        public DateTime? DateOfBirth { get; set; }
+        public DateTime DateOfBirth { get; set; }
         [Column("address")]
         public string? Address { get; set; }
         [Column("phone")]

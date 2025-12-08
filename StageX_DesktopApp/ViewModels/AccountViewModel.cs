@@ -26,6 +26,7 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private int _userId; // ID = 0 là thêm mới, > 0 là sửa
         [ObservableProperty] private string _accountName;
         [ObservableProperty] private string _fullName;
+        [ObservableProperty] private DateTime? _dateOfBirth;
         [ObservableProperty] private string _email;
         [ObservableProperty] private int _roleIndex = -1;   // Index cho ComboBox Vai trò: 0=Nhân viên, 1=Admin, -1=Chưa chọn
         [ObservableProperty] private int _statusIndex = 0;  // Index cho ComboBox Trạng thái: 0=Hoạt động, 1=Khóa
@@ -65,6 +66,7 @@ namespace StageX_DesktopApp.ViewModels
             AccountName = user.AccountName;
             Email = user.Email;
             FullName = user.UserDetail?.FullName;
+            DateOfBirth = user.UserDetail?.DateOfBirth;
 
             // Map chuỗi Role/Status từ DB sang index của ComboBox
             RoleIndex = (user.Role == "Admin") ? 1 : 0;
@@ -90,6 +92,7 @@ namespace StageX_DesktopApp.ViewModels
             RoleIndex = -1;
             StatusIndex = 0;
             FullName = "";
+            DateOfBirth = null;
 
             // Cấu hình lại quyền nhập liệu
             IsStatusEnabled = false; // Mới tạo thì mặc định là 'Hoạt động', không cho chọn 'Khóa'
@@ -109,12 +112,18 @@ namespace StageX_DesktopApp.ViewModels
             string status = StatusIndex == 1 ? "khóa" : "hoạt động";
 
             // 1. Validate: Kiểm tra các trường bắt buộc
-            if (string.IsNullOrEmpty(AccountName) || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(FullName) || RoleIndex == -1)
+            if (string.IsNullOrEmpty(AccountName) || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(FullName) || RoleIndex == -1 || DateOfBirth == null)
             {
                 MessageBox.Show("Vui lòng nhập đủ thông tin!");
                 return;
             }
 
+            if (DateOfBirth.Value.Date > DateTime.Now.Date)
+            {
+                MessageBox.Show("Ngày sinh không hợp lệ!", "Lỗi",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             // 2. Validate: Kiểm tra định dạng Email bằng Regex
             if (!IsValidEmail(Email))
             {
@@ -136,6 +145,7 @@ namespace StageX_DesktopApp.ViewModels
                     UserDetail = new UserDetail
                     {
                         UserId = UserId,
+                        DateOfBirth = DateOfBirth.Value,
                         FullName = FullName
                     }
                 };
