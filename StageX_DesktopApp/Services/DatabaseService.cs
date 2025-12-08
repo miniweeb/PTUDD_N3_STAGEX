@@ -568,32 +568,16 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Cập nhật trạng thái trước khi lấy
-                await context.Database.ExecuteSqlRawAsync("CALL proc_update_statuses()");
+                // Chuẩn bị tham số cho SP
+                string keyword = string.IsNullOrEmpty(showName) ? "" : showName;
+                // Xử lý ngày: nếu null truyền NULL, nếu có thì truyền chuỗi 'yyyy-MM-dd'
+                string dateStr = date.HasValue ? $"'{date.Value:yyyy-MM-dd}'" : "NULL";
 
-                var query = context.Performances
-                    .Include(p => p.Show)
-                    .Include(p => p.Theater)
-                    .OrderByDescending(p => p.PerformanceDate)
-                    .AsNoTracking()
-                    .AsQueryable();
+                // Gọi SP và map kết quả
+                var list = await context.Performances
+                    .FromSqlInterpolated($"CALL proc_search_performances_optimized({keyword}, {theaterId}, {dateStr})")
+                    .ToListAsync();
 
-                if (!string.IsNullOrWhiteSpace(showName))
-                    query = query.Where(p => p.Show.Title.Contains(showName));
-                if (theaterId > 0)
-                    query = query.Where(p => p.TheaterId == theaterId);
-                if (date.HasValue)
-                    query = query.Where(p => p.PerformanceDate.Date == date.Value.Date);
-
-                var list = await query.ToListAsync();
-
-                // Check Booking
-                foreach (var p in list)
-                {
-                    p.HasBookings = await context.Bookings.AnyAsync(b => b.PerformanceId == p.PerformanceId);
-                    p.ShowTitle = p.Show?.Title;
-                    p.TheaterName = p.Theater?.Name;
-                }
                 return list;
             }
         }
