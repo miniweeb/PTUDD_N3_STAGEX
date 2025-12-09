@@ -562,14 +562,14 @@ namespace StageX_DesktopApp.Services
         {
             using (var context = new AppDbContext())
             {
-                // Chuẩn bị tham số cho SP
-                string keyword = string.IsNullOrEmpty(showName) ? "" : showName;
-                // Xử lý ngày: nếu null truyền NULL, nếu có thì truyền chuỗi 'yyyy-MM-dd'
+                // Xử lý tham số: Nếu chuỗi rỗng thì truyền '', nếu null thì truyền NULL
+                string keyword = string.IsNullOrEmpty(showName) ? "''" : $"'{showName}'";
+
+                // Xử lý ngày: Đã đúng logic SQL Raw (có dấu nháy đơn hoặc chữ NULL)
                 string dateStr = date.HasValue ? $"'{date.Value:yyyy-MM-dd}'" : "NULL";
 
-                // Gọi SP và map kết quả
                 var list = await context.Performances
-                    .FromSqlInterpolated($"CALL proc_search_performances_optimized({keyword}, {theaterId}, {dateStr})")
+                    .FromSqlRaw($"CALL proc_search_performances_optimized({keyword}, {theaterId}, {dateStr})")
                     .ToListAsync();
 
                 return list;

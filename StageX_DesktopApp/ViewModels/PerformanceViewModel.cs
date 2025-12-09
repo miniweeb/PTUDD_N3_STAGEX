@@ -140,12 +140,20 @@ namespace StageX_DesktopApp.ViewModels
             int tId = SelectedFilterTheater?.TheaterId ?? 0;
             var list = await _dbService.GetPerformancesAsync(SearchShowName, tId, SelectedFilterDate);
 
-            // Map tên vở và tên rạp vào đối tượng để hiển thị trên DataGrid
             foreach (var p in list)
             {
-                p.ShowTitle = p.Show?.Title;
-                p.TheaterName = p.Theater?.Name;
+
+                var showObj = ShowsList.FirstOrDefault(s => s.ShowId == p.ShowId);
+                p.ShowTitle = showObj?.Title ?? "Không xác định"; // Gán tên vở
+
+                var theaterObj = TheatersList.FirstOrDefault(t => t.TheaterId == p.TheaterId);
+                p.TheaterName = theaterObj?.Name ?? "Không xác định"; // Gán tên rạp
+
+                p.Show = showObj;
+                p.Theater = theaterObj;
             }
+            // --------------------
+
             Performances = new ObservableCollection<Performance>(list);
         }
 
