@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 09, 2025 at 12:46 PM
+-- Generation Time: Dec 09, 2025 at 03:59 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -92,36 +92,54 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_create_ticket` (IN `p_booking_id` INT, IN `p_seat_id` INT)   BEGIN
     DECLARE v_performance_id INT;
+    DECLARE v_current_status VARCHAR(20);
     DECLARE v_new_code BIGINT;
     DECLARE v_exists INT DEFAULT 1;
 
-    -- Vòng lặp sinh mã để đảm bảo không trùng
-    WHILE v_exists > 0 DO
-        -- Sinh số ngẫu nhiên 13 chữ số
-        SET v_new_code = FLOOR(1000000000000 + RAND() * 8999999999999);
-        
-        -- Kiểm tra xem mã này đã tồn tại chưa
-        SELECT COUNT(*) INTO v_exists FROM tickets WHERE ticket_code = v_new_code;
-    END WHILE;
+    -- 1. Bắt đầu Transaction để đảm bảo tính nguyên vẹn
+    START TRANSACTION;
 
-    -- Thêm vé mới
-    INSERT INTO tickets (booking_id, seat_id, ticket_code, status, created_at)
-    VALUES (p_booking_id, p_seat_id, v_new_code, 'Hơp lệ', NOW());
-
-    -- Cập nhật trạng thái ghế trong bảng seat_performance
+    -- Lấy ID suất diễn từ Booking
     SELECT performance_id INTO v_performance_id
     FROM bookings
     WHERE booking_id = p_booking_id;
 
-    IF v_performance_id IS NOT NULL THEN
+    -- 2. [QUAN TRỌNG] Kiểm tra trạng thái ghế và KHÓA DÒNG ĐÓ LẠI
+    -- Lệnh "FOR UPDATE" sẽ khóa dòng dữ liệu này. 
+    -- Nếu có một transaction khác đang đọc dòng này, nó sẽ phải chờ transaction này xong.
+    SELECT status INTO v_current_status
+    FROM seat_performance
+    WHERE seat_id = p_seat_id AND performance_id = v_performance_id
+    FOR UPDATE;
+
+    -- 3. Kiểm tra logic: Nếu ghế không còn trống -> Hủy và Báo lỗi ngay
+    IF v_current_status <> 'trống' THEN
+        ROLLBACK; -- Hoàn tác mọi thay đổi
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'LỖI: Ghế này vừa được người khác đặt!';
+    ELSE
+        -- 4. Nếu ghế trống, tiến hành sinh mã vé (giữ nguyên logic cũ của bạn)
+        WHILE v_exists > 0 DO
+            SET v_new_code = FLOOR(1000000000000 + RAND() * 8999999999999);
+            SELECT COUNT(*) INTO v_exists FROM tickets WHERE ticket_code = v_new_code;
+        END WHILE;
+
+        -- Thêm vé mới
+        INSERT INTO tickets (booking_id, seat_id, ticket_code, status, created_at)
+        VALUES (p_booking_id, p_seat_id, v_new_code, 'Hợp lệ', NOW());
+
+        -- Cập nhật trạng thái ghế thành 'đã đặt'
         UPDATE seat_performance
         SET status = 'đã đặt'
-        WHERE seat_id = p_seat_id
-          AND performance_id = v_performance_id;
+        WHERE seat_id = p_seat_id AND performance_id = v_performance_id;
+
+        -- 5. Xác nhận thành công (Lưu thay đổi)
+        COMMIT;
+        
+        -- Trả về mã vé
+        SELECT v_new_code AS new_ticket_code;
     END IF;
-    
-    -- Trả về mã vé vừa tạo (nếu cần dùng ngay)
-    SELECT v_new_code AS new_ticket_code;
+
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_dashboard_summary` ()   BEGIN

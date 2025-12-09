@@ -600,7 +600,21 @@ namespace StageX_DesktopApp.Services
                 }
             }
         }
-
+        public async Task<bool> CheckPerformanceOverlapAsync(int theaterId, DateTime date, TimeSpan newStart, TimeSpan newEnd, int excludePerfId = 0)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Logic trùng lịch: (StartA < EndB) AND (EndA > StartB)
+                // Chỉ kiểm tra các suất chưa kết thúc và chưa hủy
+                return await context.Performances.AnyAsync(p =>
+                    p.TheaterId == theaterId &&
+                    p.PerformanceDate.Date == date.Date &&
+                    p.PerformanceId != excludePerfId && // Bỏ qua chính nó (khi đang sửa)
+                    (p.Status == "Đang mở bán" || p.Status == "Đang diễn") && // Chỉ check suất active
+                    (newStart < p.EndTime && newEnd > p.StartTime) // Công thức giao nhau thời gian
+                );
+            }
+        }
         public async Task DeletePerformanceAsync(int id)
         {
             using (var context = new AppDbContext())
@@ -611,7 +625,6 @@ namespace StageX_DesktopApp.Services
                 await context.SaveChangesAsync();
             }
         }
-
         #endregion
 
         // =================================================================================
@@ -765,21 +778,6 @@ namespace StageX_DesktopApp.Services
                 return await context.TopShows
                     .FromSqlRaw($"CALL proc_top5_shows_by_date_range({sStart}, {sEnd})")
                     .ToListAsync();
-            }
-        }
-        public async Task<bool> CheckPerformanceOverlapAsync(int theaterId, DateTime date, TimeSpan newStart, TimeSpan newEnd, int excludePerfId = 0)
-        {
-            using (var context = new AppDbContext())
-            {
-                // Logic trùng lịch: (StartA < EndB) AND (EndA > StartB)
-                // Chỉ kiểm tra các suất chưa kết thúc và chưa hủy
-                return await context.Performances.AnyAsync(p =>
-                    p.TheaterId == theaterId &&
-                    p.PerformanceDate.Date == date.Date &&
-                    p.PerformanceId != excludePerfId && // Bỏ qua chính nó (khi đang sửa)
-                    (p.Status == "Đang mở bán" || p.Status == "Đang diễn") && // Chỉ check suất active
-                    (newStart < p.EndTime && newEnd > p.StartTime) // Công thức giao nhau thời gian
-                );
             }
         }
         #endregion
