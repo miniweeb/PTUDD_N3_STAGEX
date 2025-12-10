@@ -33,13 +33,27 @@
             <!--Tạo row hiện Tiêu đề và nút export -->
             <Grid Grid.Row="0" Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="BẢNG ĐIỀU KHIỂN" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" VerticalAlignment="Center"/>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="BtnExportPdf" Content="Xuất PDF" Background="#FFDC3545" Foreground="White" Padding="10,5" 
+                <TextBlock Grid.Column="0" Text="BẢNG ĐIỀU KHIỂN" FontSize="24" FontWeight="Bold" Foreground="#FFffc107" VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+
+                    <TextBlock Text="Từ:" Foreground="Gray" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <DatePicker SelectedDate="{Binding FilterStartDate}" Width="110" Style="{StaticResource InputStyle}" Height="32"/>
+
+                    <TextBlock Text="Đến:" Foreground="Gray" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                    <DatePicker SelectedDate="{Binding FilterEndDate}" Width="110" Style="{StaticResource InputStyle}" Height="32"/>
+
+                    <Button Content="Lọc" Command="{Binding FilterByDateCommand}" 
+                            Style="{StaticResource ButtonEditStyle}" 
+                            Margin="10,0,20,0" Width="70" Height="32"/>
+
+                    <Button x:Name="BtnExportPdf" Content="Xuất PDF" Background="#FFDC3545" Foreground="White" 
+                            Padding="10,5" Height="32"
                             BorderThickness="0" FontWeight="Bold" Cursor="Hand"
                             Click="BtnExportPdf_Click">
                     </Button>

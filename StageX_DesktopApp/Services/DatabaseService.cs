@@ -730,17 +730,7 @@ namespace StageX_DesktopApp.Services
         // =================================================================================
         #region Dashboard
 
-        public async Task<DashboardSummary> GetDashboardSummaryAsync()
-        {
-            using (var context = new AppDbContext())
-            {
-                // Gọi SP: proc_dashboard_summary
-                var result = await context.DashboardSummaries
-                    .FromSqlRaw("CALL proc_dashboard_summary()")
-                    .ToListAsync();
-                return result.FirstOrDefault() ?? new DashboardSummary();
-            }
-        }
+       
 
         public async Task<List<RevenueMonthly>> GetRevenueMonthlyAsync()
         {
@@ -780,6 +770,24 @@ namespace StageX_DesktopApp.Services
                     .ToListAsync();
             }
         }
+        // Trong class DatabaseService
+
+        // 1. Sửa hoặc thêm hàm lấy Summary
+        public async Task<DashboardSummary> GetDashboardSummaryAsync(DateTime? start = null, DateTime? end = null)
+        {
+            using (var context = new AppDbContext())
+            {
+                // Xử lý chuỗi ngày để truyền vào SQL (nếu null thì truyền NULL)
+                string sStart = start.HasValue ? $"'{start.Value:yyyy-MM-dd 00:00:00}'" : "NULL";
+                string sEnd = end.HasValue ? $"'{end.Value:yyyy-MM-dd 23:59:59}'" : "NULL";
+
+                var result = await context.DashboardSummaries
+                    .FromSqlRaw($"CALL proc_dashboard_summary_by_date({sStart}, {sEnd})")
+                    .ToListAsync();
+                return result.FirstOrDefault() ?? new DashboardSummary();
+            }
+        }
+
         #endregion
     }
 }
