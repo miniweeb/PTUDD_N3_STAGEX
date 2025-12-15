@@ -259,7 +259,15 @@
                 <TextBlock Text="4. THANH TOÁN" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFC107" Margin="0,0,0,15"/>
 
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                    <Button Content="Tiền mặt" Command="{Binding SelectPaymentCommand}" CommandParameter="Cash" Padding="10,5" Margin="0,0,10,0" Background="#FF0C1220" Foreground="#FFFFC107" BorderBrush="#FFFFC107" BorderThickness="1">
+                    <!-- Cash payment button -->
+                    <Button Content="Tiền mặt"
+                            Command="{Binding SelectPaymentCommand}"
+                            CommandParameter="Cash"
+                            Padding="10,5"
+                            Margin="0,0,10,0"
+                            Background="#FF0C1220"
+                            Foreground="#FFFFC107"
+                            BorderBrush="#FFFFC107" BorderThickness="1">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Style.Triggers>
@@ -271,7 +279,15 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Button Content="Chuyển khoản" Command="{Binding SelectPaymentCommand}" CommandParameter="Bank" Padding="10,5" Background="#FF0C1220" Foreground="#FFFFC107" BorderBrush="#FFFFC107" BorderThickness="1">
+
+                    <!-- Transfer payment button (online) -->
+                    <Button Content="Chuyển khoản"
+                            Command="{Binding SelectPaymentCommand}"
+                            CommandParameter="Transfer"
+                            Padding="10,5"
+                            Background="#FF0C1220"
+                            Foreground="#FFFFC107"
+                            BorderBrush="#FFFFC107" BorderThickness="1">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Style.Triggers>
@@ -284,6 +300,16 @@
                         </Button.Style>
                     </Button>
                 </StackPanel>
+
+                <!-- Online provider selector: only visible when selecting Chuyển khoản -->
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
+                            Visibility="{Binding IsCashPayment, Converter={StaticResource InverseBoolToVis}}">
+                    <TextBlock Text="Chọn cổng:" Margin="0,0,5,0" Foreground="Gray" VerticalAlignment="Center"/>
+                    <ComboBox ItemsSource="{Binding OnlineProviders}" SelectedItem="{Binding SelectedOnlineProvider}" Width="100"/>
+                </StackPanel>
+
+                <!-- Status message for online payments -->
+                <TextBlock Text="{Binding OnlineStatusMessage}" Margin="0,10,0,0" Foreground="Gray" TextWrapping="Wrap" Visibility="{Binding IsOnlineWaiting, Converter={StaticResource BoolToVis}}"/>
 
                 <StackPanel Margin="0,10,0,0" Visibility="{Binding IsCashPayment, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="Khách đưa:" Margin="0,0,0,5" Foreground="Gray"/>
@@ -302,9 +328,10 @@
                     </Border>
                 </StackPanel>
 
-                <Button Content="HOÀN TẤT THANH TOÁN" Command="{Binding SaveOrderCommand}" 
-                        Height="40" FontSize="16" Margin="0,20,0,0" 
-                        Background="#FF198754" Foreground="White" FontWeight="Bold" Style="{StaticResource ButtonBaseStyle}"/>
+                <Button Content="HOÀN TẤT THANH TOÁN" Command="{Binding SaveOrderCommand}"
+                        Height="40" FontSize="16" Margin="0,20,0,0"
+                        Background="#FF198754" Foreground="White" FontWeight="Bold" Style="{StaticResource ButtonBaseStyle}"
+                        Visibility="{Binding IsCashPayment, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
         </Border>
     </Grid>

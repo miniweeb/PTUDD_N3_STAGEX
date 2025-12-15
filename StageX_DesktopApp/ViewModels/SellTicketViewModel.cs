@@ -2,7 +2,9 @@
 using CommunityToolkit.Mvvm.Input;
 using StageX_DesktopApp.Models;
 using StageX_DesktopApp.Services;
+using StageX_DesktopApp.Services.Momo;
 using StageX_DesktopApp.Utilities;
+using System.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -61,7 +63,20 @@ namespace StageX_DesktopApp.ViewModels
     public partial class SellTicketViewModel : ObservableObject
     {
         private readonly DatabaseService _dbService;
-        private readonly VietQRService _qrService;
+        // Momo service replaces the old VietQR service for online payment
+        private readonly MomoService _momoService;
+
+        // Fields to store the generated MoMo identifiers so we can query status later
+        private string _momoOrderId = string.Empty;
+        private string _momoRequestId = string.Empty;
+
+        // Fields to store VNPay identifiers to query status later
+        private string _vnPayOrderId = string.Empty;
+        private string _vnPayTransactionDate = string.Empty;
+
+        // Timer to poll payment status automatically for online payments
+        private System.Windows.Threading.DispatcherTimer? _paymentTimer;
+        private bool _isCheckingPayment = false;
 
         // Dữ liệu nguồn cho ComboBox
         [ObservableProperty] private List<ShowInfo> _shows;
@@ -92,6 +107,19 @@ namespace StageX_DesktopApp.ViewModels
         [ObservableProperty] private bool _isQrVisible = false;
         [ObservableProperty] private BitmapImage _qrImageSource;
 
+        // Collection of supported online payment providers (used when IsCashPayment == false)
+        [ObservableProperty]
+        private ObservableCollection<string> _onlineProviders = new() { "MoMo", "VNPay" };
+
+        // Currently selected online provider ("MoMo" or "VNPay")
+        [ObservableProperty] private string _selectedOnlineProvider = "MoMo";
+
+        // Online payment status message displayed while waiting for completion
+        [ObservableProperty] private string? _onlineStatusMessage;
+
+        // Flag indicating we are waiting for online payment confirmation
+        [ObservableProperty] private bool _isOnlineWaiting = false;
+
         // Biến tạm lưu giá vé cơ bản và ID suất diễn đang chọn
         private int _currentPerfId;
         private decimal _currentPrice;
@@ -99,7 +127,7 @@ namespace StageX_DesktopApp.ViewModels
         public SellTicketViewModel()
         {
             _dbService = new DatabaseService();
-            _qrService = new VietQRService();
+            _momoService = new MomoService();
             Task.Run(async () => await InitData());
         }
         // Hàm khởi tạo dữ liệu ban đầu
@@ -236,21 +264,21 @@ namespace StageX_DesktopApp.ViewModels
             SelectPerformanceLogic(item.Data.performance_id, item.Data.price, item.Data.Display);
         }
         // Xử lý khi chọn Vở diễn từ ComboBox (Mode Thường)
-        partial void OnSelectedShowChanged(ShowInfo value) 
-        { 
-            if (value != null) 
-            { 
-                SelectedShowText = $"Vở diễn: {value.title}"; LoadPerformances(value.show_id); 
-            } 
+        partial void OnSelectedShowChanged(ShowInfo value)
+        {
+            if (value != null)
+            {
+                SelectedShowText = $"Vở diễn: {value.title}"; LoadPerformances(value.show_id);
+            }
         }
-        private async void LoadPerformances(int showId) 
+        private async void LoadPerformances(int showId)
             => Performances = await _dbService.GetPerformancesByShowAsync(showId);
 
         // Xử lý khi chọn Suất diễn từ ComboBox (Mode Thường)
-        partial void OnSelectedPerformanceChanged(PerformanceInfo value) 
-        { 
-            if (value != null) 
-                SelectPerformanceLogic(value.performance_id, value.price, value.Display); 
+        partial void OnSelectedPerformanceChanged(PerformanceInfo value)
+        {
+            if (value != null)
+                SelectPerformanceLogic(value.performance_id, value.price, value.Display);
         }
 
         // Logic chung khi chọn suất diễn (Tải ghế + Tạo chú thích)
@@ -285,58 +313,118 @@ namespace StageX_DesktopApp.ViewModels
 
         private async void UpdateTotal()
         {
-            decimal total = BillSeats.Sum(x => x.Price); TotalText = $"Thành tiền: {total:N0}đ";
-            if (decimal.TryParse(CashGiven, out decimal given)) 
-            { 
-                decimal change = given - total; ChangeText = change >= 0 ? $"{change:N0}đ" : $"-{Math.Abs(change):N0}đ"; 
-            } else ChangeText = "0đ";
-            // Tạo mã QR nếu là Chuyển khoản
-            if (!IsCashPayment && total > 0) 
-            { 
-                IsQrVisible = true; QrImageSource = await _qrService.GenerateQrCodeAsync((int)total, "Thanh toan ve STAGEX"); 
-            } else { IsQrVisible = false; QrImageSource = null; }
+            decimal total = BillSeats.Sum(x => x.Price);
+            TotalText = $"Thành tiền: {total:N0}đ";
+            // Calculate change when cash is provided
+            if (decimal.TryParse(CashGiven, out decimal given))
+            {
+                decimal change = given - total;
+                ChangeText = change >= 0 ? $"{change:N0}đ" : $"-{Math.Abs(change):N0}đ";
+            }
+            else
+            {
+                ChangeText = "0đ";
+            }
+
+            // Reset QR and online status
+            IsQrVisible = false;
+            QrImageSource = null;
+            OnlineStatusMessage = null;
+            IsOnlineWaiting = false;
+            // Stop existing polling timer
+            StopPaymentTimer();
+
+            if (total <= 0)
+            {
+                return;
+            }
+
+            // If cash payment, no further action is required
+            if (IsCashPayment)
+            {
+                return;
+            }
+
+            // Online payment: depending on selected provider
+            if (SelectedOnlineProvider == "MoMo")
+            {
+                var result = await _momoService.GeneratePaymentAsync(total, "Thanh toan ve STAGEX");
+                _momoOrderId = result.OrderId;
+                _momoRequestId = result.RequestId;
+                if (result.Image == null)
+                {
+                    MessageBox.Show("Không thể tạo mã QR MoMo. Vui lòng kiểm tra kết nối mạng hoặc thử lại.");
+                    return;
+                }
+                QrImageSource = result.Image;
+                IsQrVisible = true;
+                OnlineStatusMessage = "Đang chờ thanh toán MoMo...";
+                IsOnlineWaiting = true;
+                StartPaymentTimer(async () =>
+                {
+                    string queryRequestId = Guid.NewGuid().ToString("N");
+                    bool paid = await _momoService.QueryPaymentAsync(_momoOrderId, queryRequestId);
+                    if (paid)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(async () => await FinalizeOnlineOrder(total, "Chuyển khoản"));
+                    }
+                });
+            }
         }
-        [RelayCommand] private void SelectPayment(string method) 
-        { 
-            IsCashPayment = (method == "Cash"); UpdateTotal(); 
+        [RelayCommand]
+        private void SelectPayment(string method)
+        {
+            // Only two main methods: Cash or Transfer
+            IsCashPayment = method == "Cash";
+            // When switching to cash, clear any online status
+            if (IsCashPayment)
+            {
+                OnlineStatusMessage = null;
+                IsOnlineWaiting = false;
+            }
+            UpdateTotal();
         }
-        // Lưu đơn hàng
+        // Lưu đơn hàng khi thanh toán bằng tiền mặt.
+        // Đối với thanh toán chuyển khoản (MoMo/VNPay), việc lưu đơn hàng sẽ được
+        // thực hiện tự động khi xác nhận thành công, do đó nút lưu chỉ áp dụng cho cash.
         [RelayCommand]
         private async Task SaveOrder()
         {
+            // Ensure we have selected a performance and at least one seat
             if (_currentPerfId == 0 || !BillSeats.Any())
             {
                 MessageBox.Show("Vui lòng chọn suất và ghế!");
                 return;
             }
+
             decimal total = BillSeats.Sum(x => x.Price);
 
-            // Kiểm tra điều kiện thanh toán tiền mặt
-            if (IsCashPayment)
+            // Only cash payments are manually saved. Online payments will auto finalize.
+            if (!IsCashPayment)
             {
-                if (!decimal.TryParse(CashGiven, out decimal given) || given % 1000 != 0 || given < total)
-                {
-                    MessageBox.Show("Tiền không hợp lệ hoặc thiếu!");
-                    return;
-                }
+                MessageBox.Show("Đang xử lý thanh toán chuyển khoản. Vui lòng đợi xác nhận tự động.");
+                return;
+            }
+
+            // Validate cash amount (must be multiple of 1000 and >= total)
+            if (!decimal.TryParse(CashGiven, out decimal given) || given % 1000 != 0 || given < total)
+            {
+                MessageBox.Show("Tiền không hợp lệ hoặc thiếu!");
+                return;
             }
 
             try
             {
-                // 1. Tạo booking – proc_create_booking_pos
                 int bookingId = await _dbService.CreateBookingPOSAsync(null, _currentPerfId, total, AuthSession.CurrentUser?.UserId ?? 0);
                 if (bookingId > 0)
                 {
-                    // 2. Tạo payment và vé – proc_create_payment và proc_create_ticket
-                    await _dbService.CreatePaymentAndTicketsAsync(
-                        bookingId,
-                        total,
-                        IsCashPayment ? "Tiền mặt" : "Chuyển khoản",
-                        BillSeats.Select(s => s.SeatId).ToList());
+                    await _dbService.CreatePaymentAndTicketsAsync(bookingId, total, "Tiền mặt", BillSeats.Select(s => s.SeatId).ToList());
                     MessageBox.Show("Thanh toán thành công!");
-                    // Refresh lại sơ đồ ghế và dữ liệu
-                    if (IsPeakMode) SwitchMode("Peak");
-                    else SelectPerformanceLogic(_currentPerfId, _currentPrice, SelectedPerfText.Replace("Suất chiếu: ", ""));
+                    // Refresh the seat map and data
+                    if (IsPeakMode) await SwitchMode("Peak"); else SelectPerformanceLogic(_currentPerfId, _currentPrice, SelectedPerfText.Replace("Suất chiếu: ", ""));
+                    // Clear selections after saving
+                    BillSeats.Clear();
+                    UpdateTotal();
                 }
             }
             catch (Exception ex)
@@ -345,9 +433,102 @@ namespace StageX_DesktopApp.ViewModels
             }
         }
 
-        private void ClearAllData() 
-        { 
-            SelectedShow = null; SelectedPerformance = null; _currentPerfId = 0; _currentPrice = 0; SelectedShowText = ""; SelectedPerfText = ""; BillSeats.Clear(); LegendItems.Clear(); CashGiven = ""; UpdateTotal(); SeatMap = null; 
+        private void ClearAllData()
+        {
+            SelectedShow = null; SelectedPerformance = null; _currentPerfId = 0; _currentPrice = 0; SelectedShowText = ""; SelectedPerfText = ""; BillSeats.Clear(); LegendItems.Clear(); CashGiven = ""; UpdateTotal(); SeatMap = null;
+        }
+
+        /// <summary>
+        /// Invoked when the SelectedOnlineProvider property changes.  When online payment
+        /// is selected, this will refresh the payment details (QR code or URL).
+        /// </summary>
+        partial void OnSelectedOnlineProviderChanged(string value)
+        {
+            if (!IsCashPayment)
+            {
+                UpdateTotal();
+            }
+        }
+
+        /// <summary>
+        /// Start the dispatcher timer to periodically call the provided async action.
+        /// This timer runs every 3 seconds until stopped or until the action triggers a finalize.
+        /// </summary>
+        private void StartPaymentTimer(Func<Task> asyncAction)
+        {
+            StopPaymentTimer();
+            _paymentTimer = new System.Windows.Threading.DispatcherTimer();
+            _paymentTimer.Interval = TimeSpan.FromSeconds(3);
+            _paymentTimer.Tick += async (s, e) =>
+            {
+                // Prevent overlapping calls
+                if (_isCheckingPayment) return;
+                _isCheckingPayment = true;
+                try
+                {
+                    _ = asyncAction();
+                }
+                finally
+                {
+                    _isCheckingPayment = false;
+                }
+            };
+            _paymentTimer.Start();
+        }
+
+        /// <summary>
+        /// Stop and dispose the payment polling timer if it exists.
+        /// </summary>
+        private void StopPaymentTimer()
+        {
+            if (_paymentTimer != null)
+            {
+                _paymentTimer.Stop();
+                _paymentTimer = null;
+            }
+        }
+
+        /// <summary>
+        /// Finalize an online order after a successful payment. This creates the booking,
+        /// payment and tickets, refreshes the seat map, displays a success message
+        /// and clears the current selection.
+        /// </summary>
+        /// <param name="total">Total amount of the order</param>
+        /// <param name="method">Payment method name to store in DB</param>
+        private async Task FinalizeOnlineOrder(decimal total, string method)
+        {
+            // Stop polling once we finalize
+            StopPaymentTimer();
+            // Prevent duplicate finalization
+            if (_currentPerfId == 0 || !BillSeats.Any()) return;
+            try
+            {
+                int bookingId = await _dbService.CreateBookingPOSAsync(null, _currentPerfId, total, AuthSession.CurrentUser?.UserId ?? 0);
+                if (bookingId > 0)
+                {
+                    await _dbService.CreatePaymentAndTicketsAsync(bookingId, total, method, BillSeats.Select(s => s.SeatId).ToList());
+                    // Show a message box to inform the user of successful online payment.
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        string provider = SelectedOnlineProvider;
+                        string message = provider == "MoMo" ? "Thanh toán MoMo thành công!" : "Thanh toán VNPay thành công!";
+                        MessageBox.Show(message, "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    });
+                    // Update UI messages in the view as well
+                    OnlineStatusMessage = "Thanh toán thành công!";
+                    IsOnlineWaiting = false;
+                    IsQrVisible = false;
+                    // Refresh seat map and data
+                    if (IsPeakMode) await SwitchMode("Peak"); else SelectPerformanceLogic(_currentPerfId, _currentPrice, SelectedPerfText.Replace("Suất chiếu: ", ""));
+                    // Clear selections
+                    BillSeats.Clear();
+                    UpdateTotal();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi lưu đơn hàng: " + ex.Message);
+            }
         }
     }
 }

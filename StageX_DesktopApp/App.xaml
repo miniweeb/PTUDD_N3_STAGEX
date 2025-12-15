@@ -6,6 +6,7 @@
 
     <Application.Resources>
         <util:InvertBoolConverter x:Key="InvertBoolConverter"/>
+        <util:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
         <Style x:Key="ButtonBaseStyle" TargetType="Button">
@@ -126,7 +127,7 @@
         </Style>
 
         <Style TargetType="PasswordBox" BasedOn="{StaticResource InputStyle}"/>
-        
+
         <Style TargetType="ComboBox" BasedOn="{StaticResource InputStyle}">
             <Setter Property="Foreground" Value="Black"/>
             <Style.Resources>
