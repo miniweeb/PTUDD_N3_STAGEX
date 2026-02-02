@@ -3,13 +3,20 @@
 Trong bối cảnh chuyển đổi số diễn ra mạnh mẽ, các đơn vị nghệ thuật biểu diễn, đặc biệt là sân khấu kịch, đang đối mặt với thách thức trong việc quản lý vận hành thủ công. StageX ra đời như một giải pháp phần mềm toàn diện, giúp tin học hóa quy trình quản lý rạp, bán vé, sắp xếp lịch diễn và báo cáo thống kê, nhằm nâng cao hiệu quả kinh doanh và trải nghiệm khán giả.
 ## Giảng viên hướng dẫn: TS. Nguyễn Mạnh Tuấn
 ## Nhóm thực hiện (Nhóm 3)
-1. Dương Thanh Ngọc - 31231024139
+1. Dương Thanh Ngọc - 31231024139 - leader
 2. Bùi Tấn Đạt - 31221025667 
 3. Huỳnh Bảo Nhi - 31231020861 
 4. Lê Mỹ Phụng - 31231026280
 5. Nguyễn Hoài Thu - 31231026200 
 6. Lê Thị Mỹ Trang - 31231026559 
 7. Nguyễn Thị Thùy Trang - 31231026201
+
+## Báo cáo và Demo sản phẩm:
+- Báo cáo cuối kỳ: https://drive.google.com/drive/folders/1gPR9VwMaYe4nwmy4Oe325gENyRaw1RHl?usp=sharing
+- Mô tả chức năng: https://drive.google.com/file/d/1GeOabfQ4BUXp-I2R8TtSnHoZMBbHrV1j/view
+- Báo cáo phân tích và kiểm thử hệ thống: https://drive.google.com/file/d/1sSNL29edw9qM9V7DJgmuyTgAlO1PIv52/view
+- Demo Desktop Application: https://drive.google.com/file/d/1sGDgg-r96dqGjqz_veQCY_aPDGYSgrOJ/view
+  
 ## Mô tả và Mục tiêu dự án
 ### Mô tả
 StageX là ứng dụng Desktop (WPF) kết hợp với API (.NET Core) phục vụ việc quản lý toàn diện một sân khấu kịch. Hệ thống hỗ trợ hai nhóm đối tượng chính:
@@ -82,21 +89,9 @@ Dự án được xây dựng dựa trên nền tảng .NET 9 và kiến trúc 3
 Visual Studio 2022 (hoặc mới hơn) hỗ trợ .NET 9.
 MySQL Server (khuyên dùng XAMPP/WAMP).
 ### Các bước cài đặt
+- Userguide (văn bản): https://drive.google.com/file/d/177801Ish1JsPc7A8xuUrmT9DMx7oUHuk/view
+- Userguide (video hướng dẫn): https://drive.google.com/file/d/1sSNL29edw9qM9V7DJgmuyTgAlO1PIv52/view
 
-1. Cơ sở dữ liệu:
-- Mở công cụ quản lý MySQL (phpMyAdmin hoặc MySQL Workbench).
-- Tạo database tên stagex_db.
-- Import file stagex_db.sql (nằm trong thư mục gốc) để tạo bảng và Stored Procedures.
-2. Cấu hình kết nối:
-- Mở file StageX_DesktopApp/Data/AppDbContext.cs (hoặc appsettings.json trong project API).
-- Cập nhật chuỗi kết nối (Connection String) phù hợp với máy cá nhân:
-  "Server=localhost;Database=stagex_db;User=root;Password=;"
-3. Chạy ứng dụng:
-- Mở file solution StageX.sln bằng Visual Studio.
-- Đặt StageX_DesktopApp làm Startup Project.
-- Nhấn Start (F5) để chạy ứng dụng.
-- Tùy chọn: Để dùng tính năng quét vé qua API, chạy song song project Stagex.Api.
-### Tài khoản mặc định
 **Admin:**
 - User: admin
 - Pass: 12345
